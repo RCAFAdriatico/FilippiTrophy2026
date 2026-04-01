@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#EEF2F8;min-height:100vh}
+button{cursor:pointer;font-family:'DM Sans',sans-serif}
+input,select{font-family:'DM Sans',sans-serif}
+.hdr{background:linear-gradient(135deg,#0A2540 0%,#1a3a5c 100%);position:sticky;top:0;z-index:50;box-shadow:0 4px 20px rgba(0,0,0,.35)}
+.hi{max-width:960px;margin:0 auto;padding:0 16px}
+.ht{display:flex;align-items:center;justify-content:space-between;padding-top:14px;padding-bottom:4px}
+.brand{color:white;font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;letter-spacing:1px;line-height:1}
+.bsub{color:rgba(255,255,255,.45);font-size:11px;letter-spacing:.8px;margin-top:2px}
+.nav{display:flex;overflow-x:auto}
+.nb{background:none;border:none;padding:12px 18px;font-size:13px;font-weight:600;color:rgba(255,255,255,.5);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.nb.on{color:#60A5FA;border-bottom-color:#60A5FA}
+.nb:hover:not(.on){color:rgba(255,255,255,.8)}
+.cnt{max-width:960px;margin:0 auto;padding:24px 16px}
+.card{background:white;border-radius:16px;border:1px solid #E2E8F0;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:16px}
+.chd{background:#F8FAFC;border-bottom:1px solid #E2E8F0;padding:10px 16px;display:flex;align-items:center;justify-content:space-between}
+.dpw{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:20px}
+.dp{flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:10px 20px;border-radius:16px;border:2px solid #E2E8F0;background:white;transition:all .15s;cursor:pointer}
+.dp.on{background:#1D4ED8;border-color:#1D4ED8;box-shadow:0 4px 14px rgba(29,78,216,.35)}
+.dp .dn{font-size:10px;font-weight:700;letter-spacing:1px;color:#94A3B8;font-family:'Barlow Condensed',sans-serif}
+.dp.on .dn,.dp.on .da{color:rgba(255,255,255,.7)}
+.dp .dd{font-size:26px;font-weight:900;color:#0F172A;font-family:'Barlow Condensed',sans-serif;line-height:1}
+.dp.on .dd{color:white}
+.dp .da{font-size:9px;color:#94A3B8}
+.st{width:100%;border-collapse:collapse;min-width:600px}
+.st th{padding:8px 10px;background:#F8FAFC;border-bottom:1px solid #E2E8F0;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.5px;text-align:center}
+.st th.tsl{text-align:left;width:110px}
+.st th.tnum{width:54px}
+.st td{padding:3px;border-top:1px solid #F1F5F9;vertical-align:top}
+.st td.tsl{padding:8px 12px;background:#F8FAFC;border-right:1px solid #E2E8F0;vertical-align:middle}
+.st td.tnum{text-align:center;vertical-align:middle;font-size:13px;font-weight:700}
+.tc-stack{min-height:64px;border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+.tc-stack.cl{cursor:pointer;transition:filter .15s}.tc-stack.cl:hover{filter:brightness(.95)}
+.tc-item{padding:5px 8px;display:flex;flex-direction:column;justify-content:center;gap:1px;flex:1}
+.tc-item:not(:last-child){border-bottom:1px solid rgba(255,255,255,.35)}
+.tcn{font-weight:700;font-size:11px;line-height:1.2}
+.tcb{font-size:9px;opacity:.7;line-height:1.2}
+.tc-empty{min-height:64px;background:#F8FAFC;border-radius:8px;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.tc-empty.cl{cursor:pointer}.tc-empty.cl:hover{background:#F1F5F9}
+.nok{color:#059669}.nwn{color:#D97706}.ner{color:#DC2626}
+.cpw{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.cp{padding:9px 18px;border-radius:999px;font-size:13px;font-weight:700;color:white;border:none;transition:all .15s;cursor:pointer}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
+.modal{background:white;border-radius:20px;padding:26px;width:100%;max-width:440px;box-shadow:0 25px 60px rgba(0,0,0,.25);max-height:92vh;overflow-y:auto}
+.mt{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;letter-spacing:.5px;color:#0F172A;margin-bottom:4px}
+.ms{font-size:12px;color:#64748B;margin-bottom:20px}
+.fl{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#374151;margin-bottom:6px}
+.fi{width:100%;border:1.5px solid #E2E8F0;border-radius:10px;padding:9px 12px;font-size:14px;outline:none;color:#0F172A;background:white;font-family:'DM Sans',sans-serif}
+.fi:focus{border-color:#3B82F6}
+.bp{background:#1D4ED8;color:white;border:none;border-radius:12px;padding:11px 20px;font-size:14px;font-weight:700;box-shadow:0 4px 12px rgba(29,78,216,.3)}
+.bp:hover{background:#1e40af}
+.bs{background:white;color:#64748B;border:1.5px solid #E2E8F0;border-radius:12px;padding:11px 20px;font-size:14px;font-weight:600}
+.bok{background:#059669;color:white;border:none;border-radius:14px;padding:13px 20px;font-size:15px;font-weight:700;width:100%;box-shadow:0 4px 12px rgba(5,150,105,.3)}
+.cd{width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;transition:transform .1s}
+.qr{display:flex;align-items:center;border:1.5px solid #E2E8F0;border-radius:10px;overflow:hidden}
+.qb{width:32px;height:32px;border:none;background:#F8FAFC;font-size:16px;color:#374151;flex-shrink:0;line-height:1;cursor:pointer}
+.qb:hover{background:#E2E8F0}
+.qv{width:40px;text-align:center;font-size:15px;font-weight:700;color:#0F172A;font-family:'Barlow Condensed',sans-serif}
+.asb{padding:8px 18px;border-radius:999px;font-size:13px;font-weight:600;border:1.5px solid #E2E8F0;background:white;color:#475569;transition:all .15s}
+.asb.on{background:#1D4ED8;color:white;border-color:#1D4ED8}
+.cr{background:white;border-radius:14px;border:1px solid #E2E8F0;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.es{text-align:center;color:#94A3B8;padding:60px 20px;background:#F8FAFC;border-radius:16px}
+.ib{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:14px;padding:14px 16px;font-size:13px;color:#1E40AF;line-height:1.6}
+.gb{background:#F0FDF4;border:1px solid #86EFAC;border-radius:14px;padding:14px 16px;font-size:13px;color:#15803D;line-height:1.6}
+.wb{background:#FFFBEB;border:1px solid #FCD34D;border-radius:14px;padding:14px 16px;font-size:13px;color:#92400E;line-height:1.6}
+.rb{background:#FEF2F2;border:1px solid #FECACA;border-radius:14px;padding:14px 16px;font-size:13px;color:#991B1B;line-height:1.6}
+.sb{display:inline-flex;align-items:center;gap:3px;background:#F0FDF4;border:1px solid #86EFAC;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:700;color:#15803D}
+.scrd{border-radius:14px;border:1.5px solid #E2E8F0;padding:16px 20px;background:white;display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.mw{background:#F1F5F9;border-radius:8px;height:8px;overflow:hidden;flex:1}
+.mb{height:100%;border-radius:8px;transition:all .3s}
+.at{width:100%;border-collapse:collapse;font-size:13px}
+.at th{padding:8px 10px;background:#F8FAFC;border-bottom:1px solid #E2E8F0;font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.5px;text-align:center}
+.at th:first-child{text-align:left}
+.at td{padding:8px 10px;border-top:1px solid #F1F5F9;text-align:center}
+.at td:first-child{text-align:left}
+.an{width:52px;border:1.5px solid #E2E8F0;border-radius:8px;padding:5px 6px;font-size:14px;font-weight:700;text-align:center;color:#0F172A;background:white;outline:none;font-family:'Barlow Condensed',sans-serif}
+.an:focus{border-color:#3B82F6}
+.an.ov2{border-color:#DC2626;background:#FEF2F2}
+.an.sat{border-color:#059669}
+.aeb{font-size:12px;color:rgba(255,255,255,.5);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:6px 12px}
+.aeb:hover{background:rgba(255,255,255,.15);color:white}
+.pb{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:14px 18px;border-radius:14px;border:2px solid #E2E8F0;background:white;text-align:left;transition:all .15s;width:100%;margin-bottom:10px}
+.pb:hover:not(:disabled){border-color:#1D4ED8;box-shadow:0 4px 14px rgba(29,78,216,.15)}
+.pb:disabled{opacity:.45;cursor:not-allowed}
+.pb .pbi{font-size:22px;margin-bottom:2px}
+.pb .pbt{font-size:14px;font-weight:700;color:#0F172A}
+.pb .pbd{font-size:12px;color:#64748B}
+.pb .pbb{background:#1D4ED8;color:white;border-radius:7px;padding:2px 10px;font-size:11px;font-weight:700;margin-top:4px;display:inline-block}
+.bw{display:inline-flex;align-items:center;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700;font-family:'Barlow Condensed',sans-serif}
+.up{border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:6px;border:1px solid #E2E8F0}
+.gbox{border-radius:14px;border:1.5px solid #E2E8F0;padding:14px;margin-bottom:10px;background:white}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const ST={
+  async get(k){try{const v=localStorage.getItem(k);if(v)return{value:v};}catch{}return null;},
+  async set(k,v){try{localStorage.setItem(k,v);}catch{}}
+};
+const DAYS=[{date:'2026-04-11',label:'Sab 11 Apr',day:'SAB',num:'11'},{date:'2026-04-12',label:'Dom 12 Apr',day:'DOM',num:'12'},{date:'2026-04-13',label:'Lun 13 Apr',day:'LUN',num:'13'},{date:'2026-04-14',label:'Mar 14 Apr',day:'MAR',num:'14'},{date:'2026-04-15',label:'Mer 15 Apr',day:'MER',num:'15'}];
+const SLOTS=[{id:'M1',label:'8:30-10:30',ses:'Mattina'},{id:'M2',label:'10:30-12:30',ses:'Mattina'},{id:'P1',label:'14:00-16:00',ses:'Pom.'},{id:'P2',label:'16:00-18:00',ses:'Pom.'}];
+const LINES=[1,2,3,4];
+const CAMPO={1:'A',2:'A',3:'B',4:'B'};
+const PAL=['#1D4ED8','#DC2626','#059669','#D97706','#7C3AED','#DB2777','#0891B2','#EA580C','#94A3B8','#64748B','#B45309','#0F766E'];
+const BT=[{id:'s',lbl:'Singolo',sh:'1x',col:'#0891B2'},{id:'d',lbl:'Doppio',sh:'2x',col:'#7C3AED'}];
+const PWD='filippi2026';
+const uid=()=>Math.random().toString(36).slice(2,9);
+const isAct=(c,d)=>{const cin=c.in||c.arrivalDate;const cout=c.out||c.departureDate;if(!cin||!cout)return true;return cin<=d&&cout>=d;};
+function rg(h,a){const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return`rgba(${r},${g},${b},${a})`;}
+function rgb(h){return[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
+function bstr(c){if(!c)return'';if(c.auto)return'auto';const f=c.fleet||{};return BT.filter(b=>(f[b.id]||0)>0).map(b=>`${f[b.id]}x${b.sh}`).join(' ')||'';}
+function cBW(c){if(!c||c.auto)return{s:0,d:0};return{s:c.fleet?.s||0,d:c.fleet?.d||0};}
+function unitBW(members){return members.reduce((a,c)=>{const w=cBW(c);return{s:a.s+w.s,d:a.d+w.d};},{s:0,d:0});}
+function bwStr(w){return[w.s>0?w.s+'x1x':'',w.d>0?w.d+'x2x':''].filter(Boolean).join(' ')||'';}
+function buildUnits(clubs,date,groups){
+  const act=clubs.filter(c=>isAct(c,date));
+  const units=[];const usedIds=new Set();
+  act.filter(c=>!c.sharable).forEach(c=>units.push([c]));
+  (groups||[]).forEach(g=>{const ms=g.members.map(id=>act.find(c=>c.id===id&&c.sharable)).filter(Boolean).filter(c=>!usedIds.has(c.id));if(ms.length){units.push(ms);ms.forEach(c=>usedIds.add(c.id));}});
+  act.filter(c=>c.sharable&&!usedIds.has(c.id)).forEach(c=>units.push([c]));
+  return units;
+}
+function applyRot(clubs,sched,groups){
+  const s=JSON.parse(JSON.stringify(sched));
+  DAYS.forEach(d=>SLOTS.forEach(sl=>LINES.forEach(l=>{s[d.date][sl.id][l]={ids:[]};})));
+  DAYS.forEach((day,di)=>{
+    const units=buildUnits(clubs,day.date,groups);if(!units.length)return;
+    const N=units.length;const rot=Array.from({length:N},(_,i)=>units[(i+di)%N]);
+    rot.forEach((unit,i)=>{const line=(i%4)+1;const ms=i<4?'M1':'M2';const ps=i<4?'P1':'P2';const ids=unit.map(c=>c.id);s[day.date][ms][line]={ids};s[day.date][ps][line]={ids};});
+  });return s;
+}
+function slotTot(clubs,sched,date,slotId){let s=0,d=0;LINES.forEach(l=>{(sched?.[date]?.[slotId]?.[l]?.ids||[]).forEach(id=>{const c=clubs.find(x=>x.id===id);if(c&&!c.auto){s+=(c.fleet?.s||0);d+=(c.fleet?.d||0);}});});return{s,d};}
+function calcAlloc(stk,clubs){const res={};clubs.forEach(c=>res[c.id]={s:0,d:0});BT.forEach(bt=>{let av=stk[bt.id]||0;const req=clubs.filter(c=>!c.auto&&(c.want?.[bt.id]||0)>0).sort((a,b)=>a.in.localeCompare(b.in));if(!req.length||!av)return;const tw=req.reduce((a,c)=>a+(c.want[bt.id]||0),0);let ds=0;req.forEach(c=>{const sh=Math.floor(av*(c.want[bt.id]||0)/tw);res[c.id][bt.id]=Math.min(sh,c.want[bt.id]||0);ds+=res[c.id][bt.id];});let lft=av-ds;[...req].sort((a,b)=>(b.want?.[bt.id]||0)-(a.want?.[bt.id]||0)).forEach(c=>{if(!lft)return;if(res[c.id][bt.id]<(c.want?.[bt.id]||0)){res[c.id][bt.id]++;lft--;}});});return res;}
+function atot(ta){const t={s:0,d:0};if(!ta)return t;Object.values(ta).forEach(v=>{t.s+=(v.s||0);t.d+=(v.d||0);});return t;}
+function mkS(){const s={};DAYS.forEach(d=>{s[d.date]={};SLOTS.forEach(sl=>{s[d.date][sl.id]={};LINES.forEach(l=>{s[d.date][sl.id][l]={ids:[]};});});});return s;}
+function hydS(sv){const s=mkS();if(!sv)return s;DAYS.forEach(d=>SLOTS.forEach(sl=>LINES.forEach(l=>{const c=sv?.[d.date]?.[sl.id]?.[l];if(!c)return;if(Array.isArray(c.ids))s[d.date][sl.id][l]={ids:c.ids};else{const ids=[];if(c.c1)ids.push(c.c1);if(c.c2)ids.push(c.c2);s[d.date][sl.id][l]={ids};}})));return s;}
+
+const K='ft26j';
+let S={clubs:[],stk:{s:5,d:5},sched:mkS(),groups:[],tab:'grid',admin:false,loading:true,showLogin:false,pwd:'',pwdErr:false,editCell:null,showCF:false,editCId:null,cf:{name:'',in:'2026-04-11',out:'2026-04-15',ci:0,want:{s:0,d:0},auto:false,sharable:false},sec:'stk',day:0,selClub:null,pdfBusy:false,ta:null,showGM:false,editGIdx:null,gmSelected:[]};
+function set(p){S={...S,...p};render();}
+
+async function load(){
+  try{const r=await ST.get(K+'-c');if(r)S.clubs=JSON.parse(r.value);}catch{}
+  try{const r=await ST.get(K+'-s');if(r)S.sched=hydS(JSON.parse(r.value));}catch{}
+  try{const r=await ST.get(K+'-k');if(r)S.stk=JSON.parse(r.value);}catch{}
+  try{const r=await ST.get(K+'-g');if(r)S.groups=JSON.parse(r.value);}catch{}
+  S.loading=false;S.selClub=S.clubs[0]?.id||null;render();
+}
+const sC=async c=>{S.clubs=c;render();await ST.set(K+'-c',JSON.stringify(c));};
+const sS=async s=>{S.sched=s;render();await ST.set(K+'-s',JSON.stringify(s));};
+const sK=async k=>{S.stk=k;render();await ST.set(K+'-k',JSON.stringify(k));};
+const sG=async g=>{S.groups=g;render();await ST.set(K+'-g',JSON.stringify(g));};
+async function clr(){if(!confirm('Cancellare tutti i dati?'))return;S.clubs=[];S.sched=mkS();S.stk={s:5,d:5};S.groups=[];S.ta=null;S.selClub=null;await sC([]);await sS(mkS());await sK({s:5,d:5});await sG([]);set({tab:'admin',sec:'stk'});}
+
+function render(){const app=document.getElementById('app');if(S.loading){app.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:#94A3B8">Caricamento...</div>';return;}app.innerHTML=hAll();att();}
+function hAll(){return`${hHdr()}<div class="cnt">${S.tab==='grid'?hGrid():''}${S.tab==='list'?hList():''}${S.tab==='club'?hClub():''}${S.tab==='admin'&&S.admin?hAdmin():''}${S.tab==='admin'&&!S.admin?hGate():''}</div>${S.showLogin?hLogin():''}${S.editCell?hEC():''}${S.showCF?hCF():''}${S.showGM?hGM():''}`;}
+
+function hHdr(){
+  const tabs=[{id:'grid',l:'Griglia'},{id:'list',l:'Lista'},{id:'club',l:'Per Club'},{id:'admin',l:S.admin?'Admin':'Admin'}];
+  return`<div class="hdr"><div class="hi"><div class="ht"><div><div class="brand">FILIPPI TROPHY 2026</div><div class="bsub">CAMP PRE-REGATA 11-15 APRILE</div></div>${S.admin?`<button class="aeb" onclick="set({admin:false,tab:'grid'})">Esci admin</button>`:''}</div><nav class="nav">${tabs.map(t=>`<button class="nb ${S.tab===t.id?'on':''}" onclick="xTab('${t.id}')">${t.l}</button>`).join('')}</nav></div></div>`;}
+
+function rCell(cell,adm,date,sid,line){
+  const ids=cell?.ids||[];const teams=ids.map(id=>S.clubs.find(c=>c.id===id)).filter(Boolean);
+  const oc=adm?`onclick="xOC('${date}','${sid}',${line})"`:'';
+  if(!teams.length)return`<div class="tc-empty ${adm?'cl':''}" ${oc}>${adm?'<span style="color:#CBD5E1;font-size:11px">+</span>':''}</div>`;
+  return`<div class="tc-stack ${adm?'cl':''}" ${oc} style="border:1px solid ${rg(teams[0].color,.2)}">
+    ${teams.map(c=>`<div class="tc-item" style="background:${rg(c.color,.1)};border-left:3px solid ${c.color}"><div class="tcn" style="color:${c.color}">${c.name}${c.auto?' (auto)':''}${c.sharable?' (s)':''}</div>${bstr(c)?`<div class="tcb">${bstr(c)}</div>`:''}</div>`).join('')}
+  </div>`;}
+
+function hTbl(day,adm){
+  const pres=S.clubs.filter(c=>isAct(c,day.date));
+  const pn=pres.length?pres.map(c=>c.name).join(', '):'--';
+  const has=SLOTS.some(sl=>LINES.some(l=>(S.sched?.[day.date]?.[sl.id]?.[l]?.ids||[]).length>0));
+  return`<div class="card"><div class="chd"><div><div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:#0F172A;margin-bottom:3px">${day.day} ${day.num} Apr</div><div style="font-size:12px;color:#64748B">-- ${pn}</div></div></div>
+    ${!has&&!adm?`<div style="padding:20px;text-align:center;color:#CBD5E1;font-size:13px">Nessuno slot -- Admin > Rotazione > Genera.</div>`:''}
+    ${has||adm?`<div style="overflow-x:auto"><table class="st"><thead><tr><th class="tsl">Slot</th><th>Linea 1</th><th>Linea 2</th><th>Linea 3</th><th>Linea 4</th><th class="tnum">1x/${S.stk.s}</th><th class="tnum">2x/${S.stk.d}</th></tr></thead>
+      <tbody>${SLOTS.map(sl=>{const tot=slotTot(S.clubs,S.sched,day.date,sl.id);const sc=tot.s>S.stk.s?'ner':tot.s===S.stk.s?'nwn':'nok';const dc=tot.d>S.stk.d?'ner':tot.d===S.stk.d?'nwn':'nok';const warn=tot.s>S.stk.s||tot.d>S.stk.d;
+        return`<tr><td class="tsl"><div style="font-size:11px;color:#94A3B8">${sl.ses}</div><div style="font-size:13px;font-weight:700;color:#0F172A;font-family:'Barlow Condensed',sans-serif">${sl.label}</div>${warn?`<div style="font-size:10px;color:#DC2626;font-weight:600">barche over</div>`:''}</td>
+          ${LINES.map(l=>`<td>${rCell(S.sched?.[day.date]?.[sl.id]?.[l]||{},adm,day.date,sl.id,l)}</td>`).join('')}
+          <td class="tnum"><span class="${sc}">${tot.s||'--'}</span></td><td class="tnum"><span class="${dc}">${tot.d||'--'}</span></td></tr>`;}).join('')}
+      </tbody></table></div>`:''}
+  </div>`;}
+
+function hGrid(){
+  if(!S.clubs.length)return`<div class="es"><p style="margin-bottom:16px">Nessun team. Inizia dall'Admin.</p><button onclick="set({sec:'stk',tab:'admin'})" style="background:#1D4ED8;color:white;border:none;border-radius:12px;padding:10px 22px;font-size:14px;font-weight:700">Vai all'Admin</button></div>`;
+  return`<div class="dpw">${DAYS.map((d,i)=>`<button class="dp ${i===S.day?'on':''}" onclick="set({day:${i}})"><span class="dn">${d.day}</span><span class="dd">${d.num}</span><span class="da">APR</span></button>`).join('')}</div>${hTbl(DAYS[S.day],S.admin)}`;}
+function hList(){if(!S.clubs.length)return`<div class="es"><p>Nessun team.</p></div>`;return DAYS.map(d=>hTbl(d,false)).join('');}
+
+function hClub(){
+  if(!S.clubs.length)return`<div class="es"><p>Nessun club.</p></div>`;
+  const selId=S.selClub||S.clubs[0]?.id;const club=S.clubs.find(c=>c.id===selId);
+  const my=[];if(club)DAYS.forEach(day=>SLOTS.forEach(sl=>LINES.forEach(l=>{const ids=S.sched?.[day.date]?.[sl.id]?.[l]?.ids||[];if(ids.includes(club.id)){const partners=ids.filter(id=>id!==club.id).map(id=>S.clubs.find(c=>c.id===id)).filter(Boolean);my.push({day,sl,l,partners});}})));
+  return`<div class="cpw">${S.clubs.map(c=>`<button class="cp" style="background:${c.color};opacity:${c.id===selId?1:.4};transform:${c.id===selId?'scale(1.05)':'scale(1)'}" onclick="set({selClub:'${c.id}'})">${c.name}</button>`).join('')}</div>
+  ${club?`<div style="border-radius:16px;padding:18px 22px;display:flex;align-items:center;gap:16px;margin-bottom:16px;background:${rg(club.color,.07)};border-left:4px solid ${club.color}">
+    <div style="flex:1"><div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:${club.color}">${club.name.toUpperCase()}</div>
+    <div style="font-size:13px;color:#64748B;margin-top:4px">${DAYS.find(d=>d.date===club.in)?.label||club.in} -- ${DAYS.find(d=>d.date===club.out)?.label||club.out}</div></div>
+    <div style="text-align:right"><div style="font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:900;color:${club.color}">${my.length}</div><div style="font-size:11px;color:#94A3B8">slot</div></div>
+  </div>
+  ${my.length?`<div class="card"><div class="chd"><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:#0F172A">SLOT</span></div>
+    ${my.map(s=>`<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid #F1F5F9"><div style="width:3px;height:36px;border-radius:2px;background:${club.color};flex-shrink:0"></div>
+      <div style="flex:1"><div style="font-weight:700;font-size:14px;color:#0F172A">${s.day.label}</div><div style="font-size:12px;color:#64748B">${s.sl.ses} ${s.sl.label}${s.partners.length?` con ${s.partners.map(p=>p.name).join(', ')}`:''}  Linea ${s.l} Campo ${CAMPO[s.l]}</div></div></div>`).join('')}</div>`:
+    `<div class="es" style="padding:36px">Nessuno slot assegnato.</div>`}`:''}`;}
+
+function hAdmin(){
+  const secs=[{id:'stk',l:'Barche'},{id:'cl',l:'Team'},{id:'al',l:'Assegnazione'},{id:'ro',l:'Rotazione'},{id:'pd',l:'PDF'}];
+  return`<div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap">${secs.map(s=>`<button class="asb ${S.sec===s.id?'on':''}" onclick="xSec('${s.id}')">${s.l}</button>`).join('')}</div>
+  ${S.sec==='stk'?hStk():''}${S.sec==='cl'?hCl():''}${S.sec==='al'?hAl():''}${S.sec==='ro'?hRo():''}${S.sec==='pd'?hPd():''}`;}
+
+function hStk(){return`<div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:#0F172A;margin-bottom:16px">PARCO BARCHE</div>
+  ${BT.map(bt=>{const used=S.clubs.filter(c=>!c.auto).reduce((a,c)=>a+(c.fleet?.[bt.id]||0),0);const av=S.stk[bt.id]||0;const pct=av>0?Math.min(100,used/av*100):0;const ov=used>av;const fl=used===av&&av>0;
+    return`<div class="scrd"><div style="background:${rg(bt.col,.1)};border-radius:10px;padding:8px 14px;text-align:center;flex-shrink:0"><div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:${bt.col}">${bt.sh}</div></div>
+      <div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;font-weight:600">Disponibili</span><span style="font-size:12px;color:${ov?'#DC2626':fl?'#D97706':'#64748B'}">${used}/${av}</span></div>
+        <div class="mw" style="margin-bottom:10px"><div class="mb" style="width:${pct}%;background:${ov?'#DC2626':fl?'#D97706':bt.col}"></div></div>
+        <div style="display:flex;align-items:center;gap:8px"><button class="qb" onclick="xSK('${bt.id}',-1)" style="border-radius:8px;border:1.5px solid #E2E8F0">-</button><span style="font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;color:${bt.col};min-width:36px;text-align:center">${av}</span><button class="qb" onclick="xSK('${bt.id}',1)" style="border-radius:8px;border:1.5px solid #E2E8F0">+</button></div>
+      </div></div>`;}).join('')}
+  <div class="ib" style="margin-top:4px">Flusso: 1) Stock - 2) Team - 3) Assegnazione - 4) Gruppi - 5) Genera</div>`;}
+
+function hCl(){return`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:#0F172A">TEAM</div>
+    <div style="display:flex;gap:8px"><button onclick="clr()" style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;border-radius:10px;padding:7px 14px;font-size:12px;font-weight:600">Cancella tutto</button><button onclick="xNC()" style="background:#1D4ED8;color:white;border:none;border-radius:12px;padding:9px 18px;font-size:14px;font-weight:700">+ Aggiungi</button></div>
+  </div>
+  ${!S.clubs.length?`<div class="es"><p>Nessun team.</p></div>`:
+  S.clubs.map(c=>{const w=cBW(c);return`<div class="cr"><div style="width:14px;height:14px;border-radius:50%;background:${c.color};flex-shrink:0"></div>
+    <div style="flex:1"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font-weight:700;font-size:15px;color:#0F172A">${c.name}</span>
+      ${c.auto?`<span style="font-size:11px;color:#94A3B8;background:#F1F5F9;border:1px solid #E2E8F0;border-radius:5px;padding:1px 6px">autonomo</span>`:''}
+      ${c.sharable&&!c.auto?`<span class="sb">s</span>`:''}
+      ${!c.auto&&(w.s||w.d)?`<span class="bw" style="background:#F1F5F9;color:#374151">${bwStr(w)}</span>`:''}
+    </div>
+    <div style="font-size:12px;color:#64748B">${DAYS.find(d=>d.date===c.in)?.label||c.in} -- ${DAYS.find(d=>d.date===c.out)?.label||c.out}</div>
+    ${!c.auto?`<div style="font-size:11px;color:#94A3B8">${BT.filter(b=>(c.want?.[b.id]||0)>0).map(b=>`Vuole ${c.want[b.id]}x${b.sh}`).join(' ')}</div>`:''}
+    </div>
+    <button onclick="xEC('${c.id}')" style="font-size:13px;color:#1D4ED8;background:none;border:none;font-weight:600">Modifica</button>
+    <button onclick="xDC('${c.id}')" style="font-size:13px;color:#DC2626;background:none;border:none;font-weight:600;margin-left:8px">X</button>
+  </div>`;}).join('')}`;}
+
+function hAl(){const ta=S.ta||{};const tots=atot(ta);const na=S.clubs.filter(c=>!c.auto);
+  return`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:#0F172A">ASSEGNAZIONE BARCHE</div>
+    <button onclick="xCA()" style="background:#1D4ED8;color:white;border:none;border-radius:12px;padding:9px 18px;font-size:13px;font-weight:700">Calcola auto</button>
+  </div>
+  <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+    ${BT.map(bt=>{const u=tots[bt.id]||0;const av=S.stk[bt.id]||0;const ov=u>av;const fl=u===av&&av>0;const pct=av>0?Math.min(100,u/av*100):0;
+      return`<div style="flex:1;min-width:160px;background:white;border-radius:12px;border:1.5px solid ${ov?'#FECACA':fl?'#FCD34D':'#E2E8F0'};padding:12px 16px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:700;font-size:13px;color:${bt.col}">${bt.sh}</span><span id="al-${bt.id}" style="font-size:12px;font-weight:700;color:${ov?'#DC2626':fl?'#D97706':'#059669'}">${u}/${av}</span></div>
+        <div class="mw"><div id="ab-${bt.id}" class="mb" style="width:${pct}%;background:${ov?'#DC2626':fl?'#D97706':bt.col}"></div></div>
+      </div>`;}).join('')}
+  </div>
+  ${!na.length?`<div class="es" style="padding:40px">Aggiungi prima i team.</div>`:!S.ta?`<div class="ib" style="margin-bottom:16px">Clicca Calcola auto per la proposta.</div>`:''}
+  ${na.length?`<div class="card" style="overflow-x:auto;margin-bottom:16px"><table class="at">
+    <thead><tr><th>Team</th>${BT.map(bt=>`<th>Vuole ${bt.sh}</th><th>Assegna ${bt.sh}</th>`).join('')}<th>Stato</th></tr></thead>
+    <tbody>${na.map(c=>{const a=ta[c.id]||{s:0,d:0};const warn=BT.filter(bt=>(c.want?.[bt.id]||0)>0&&(a[bt.id]||0)<1).map(bt=>bt.sh);
+      return`<tr><td><div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:${c.color}"></div><span style="font-weight:600">${c.name}</span></div></td>
+      ${BT.map(bt=>{const wv=c.want?.[bt.id]||0;const av=a[bt.id]||0;return`<td><span style="font-size:12px;color:#94A3B8">${wv||'--'}</span></td><td><input type="number" min="0" class="an ${av>wv&&wv>0?'ov2':av>0&&av<=wv?'sat':''}" value="${av}" oninput="xUA('${c.id}','${bt.id}',this.value,this)" ${!wv?'disabled style="opacity:.3"':''}></td>`;}).join('')}
+      <td style="text-align:center">${warn.length?`<span style="font-size:11px;color:#D97706">! ${warn.join(',')}</span>`:`<span style="font-size:11px;color:#059669">ok</span>`}</td>
+    </tr>`;}).join('')}</tbody></table></div>`:''}
+  <button class="bok" onclick="xFA()" ${!S.ta||!na.length?'disabled':''}>Conferma e salva assegnazione</button>`;}
+
+function hRo(){
+  const sh=S.clubs.filter(c=>c.sharable&&!c.auto);
+  const usedIds=new Set(S.groups.flatMap(g=>g.members));
+  const freeShAll=sh.filter(c=>!usedIds.has(c.id));
+  let bD=DAYS[0];let mx=0;
+  DAYS.forEach(day=>{const n=buildUnits(S.clubs,day.date,S.groups).length;if(n>mx){mx=n;bD=day;}});
+  const units=buildUnits(S.clubs,bD.date,S.groups);
+  const fits=units.length<=8;
+  const tot=S.clubs.filter(c=>isAct(c,bD.date)).length;
+  const di=DAYS.findIndex(d=>d.date===bD.date);
+  const slotWarn=[];
+  if(units.length){const N=units.length;const rot=Array.from({length:N},(_,i)=>units[(i+di)%N]);const slotMap={M1:[],M2:[],P1:[],P2:[]};rot.forEach((u,i)=>{const ms=i<4?'M1':'M2';const ps=i<4?'P1':'P2';slotMap[ms].push(u);slotMap[ps].push(u);});Object.entries(slotMap).forEach(([sid,sunits])=>{const t2=sunits.reduce((a,u)=>{const w=unitBW(u);return{s:a.s+w.s,d:a.d+w.d};},{s:0,d:0});if(t2.s>S.stk.s||t2.d>S.stk.d){const sl=SLOTS.find(s=>s.id===sid);slotWarn.push(`${sl?.ses} ${sl?.label}: ${t2.s>S.stk.s?`1x ${t2.s}/${S.stk.s} `:''} ${t2.d>S.stk.d?`2x ${t2.d}/${S.stk.d}`:''}`);}}); }
+  return`<div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:#0F172A;margin-bottom:16px">ROTAZIONE</div>
+  <div class="card" style="margin-bottom:16px"><div class="chd"><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:#0F172A">GRUPPI LINEA CONDIVISA</span>
+    <button onclick="xNewGroup()" style="background:#059669;color:white;border:none;border-radius:10px;padding:7px 16px;font-size:13px;font-weight:700">+ Nuovo gruppo</button></div>
+    <div style="padding:14px">
+      ${!sh.length?`<div style="text-align:center;color:#CBD5E1;font-size:13px;padding:8px">Nessun team con "Puo condividere".</div>`:''}
+      ${S.groups.map((g,gi)=>{const ms=g.members.map(id=>S.clubs.find(c=>c.id===id)).filter(Boolean);const tw=unitBW(ms);const over=tw.s>S.stk.s||tw.d>S.stk.d;
+        return`<div class="gbox" style="border-color:${over?'#FECACA':'#E2E8F0'}">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:8px"><span style="font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:15px">Gruppo ${gi+1}</span>
+              ${bwStr(tw)?`<span class="bw" style="background:${over?'#FEF2F2':'#F1F5F9'};color:${over?'#DC2626':'#374151'}">${bwStr(tw)}${over?' !':''}</span>`:''}
+            </div>
+            <div style="display:flex;gap:6px">
+              <button onclick="xEditGroup(${gi})" style="font-size:12px;color:#1D4ED8;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:4px 12px;font-weight:600">Modifica</button>
+              <button onclick="xDelGroup(${gi})" style="font-size:12px;color:#DC2626;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:4px 10px;font-weight:600">X</button>
+            </div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">${ms.map(c=>`<div style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:8px;background:${rg(c.color,.09)};border:1px solid ${rg(c.color,.2)}"><div style="width:8px;height:8px;border-radius:50%;background:${c.color}"></div><span style="font-weight:700;font-size:12px;color:${c.color}">${c.name}</span>${bstr(c)?`<span class="bw" style="background:${rg(c.color,.15)};color:${c.color}">${bstr(c)}</span>`:''}</div>`).join('')}</div>
+        </div>`;}).join('')}
+      ${freeShAll.length?`<div style="margin-top:8px;padding:10px 12px;background:#FFFBEB;border:1px solid #FCD34D;border-radius:10px;font-size:12px;color:#92400E">Team senza gruppo: <strong>${freeShAll.map(c=>c.name).join(', ')}</strong> -- alleneranno da soli.</div>`:''}
+    </div>
+  </div>
+  ${slotWarn.length?`<div class="rb" style="margin-bottom:16px"><strong>Conflitti barche (${bD.label}):</strong>${slotWarn.map(w=>`<div>- ${w}</div>`).join('')}<div style="margin-top:6px;font-size:12px">Chi ha 3x1x va con team da 1x1x o autonomi, non con 2x1x.</div></div>`:''}
+  ${S.clubs.length?`<div class="${fits&&!slotWarn.length?'gb':'wb'}" style="margin-bottom:16px"><strong>${bD.label}</strong> -- ${tot} team -- ${units.length} linee necessarie -- ${fits?`ok: ${units.length}/8`:`ATTENZIONE: ${units.length} > 8`}</div>`:''}
+  ${units.length?`<div class="card" style="margin-bottom:16px"><div class="chd"><span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:#0F172A">Preview -- ${bD.label}</span></div><div style="padding:10px 12px">
+    ${(()=>{const N=units.length;const rot=Array.from({length:N},(_,i)=>units[(i+di)%N]);return rot.map((u,i)=>{const line=(i%4)+1;const ms=i<4?'M1':'M2';const ps=i<4?'P1':'P2';const tw=unitBW(u);const over=tw.s>S.stk.s||tw.d>S.stk.d;
+      return`<div class="up" style="background:${u.length>1?rg(u[0].color,.04):'white'}"><div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;color:#94A3B8;width:28px;flex-shrink:0">L${line}</div>
+        <div style="flex:1;display:flex;align-items:center;gap:5px;flex-wrap:wrap">${u.map(c=>`<span style="font-weight:700;font-size:13px;color:${c.color}">${c.name}</span>${bstr(c)?`<span class="bw" style="background:${rg(c.color,.12)};color:${c.color}">${bstr(c)}</span>`:''}`).join('<span style="color:#CBD5E1"> + </span>')}</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0"><div style="font-size:10px;color:#94A3B8">${SLOTS.find(s=>s.id===ms)?.label}</div><div style="font-size:10px;color:#94A3B8">${SLOTS.find(s=>s.id===ps)?.label}</div>${bwStr(tw)?`<span class="bw" style="background:${over?'#FEF2F2':'#F1F5F9'};color:${over?'#DC2626':'#64748B'}">${bwStr(tw)}</span>`:''}</div>
+      </div>`;}).join('');})()}
+  </div></div>`:''}
+  ${S.clubs.length?`<button class="bok" onclick="xGR()">Genera programma completo</button><p style="text-align:center;font-size:12px;color:#94A3B8;margin-top:8px">Genera per tutti e 5 i giorni</p>`:`<div class="es" style="padding:40px">Aggiungi prima i team.</div>`}`;}
+
+function hPd(){const has=S.clubs.some(c=>DAYS.some(day=>SLOTS.some(sl=>LINES.some(l=>(S.sched?.[day.date]?.[sl.id]?.[l]?.ids||[]).length>0))));
+  return`<div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:#0F172A;margin-bottom:16px">ESPORTA PDF</div>
+  ${!has?`<div class="ib" style="margin-bottom:16px">Genera prima il programma dalla sezione Rotazione.</div>`:''}
+  <button class="pb" ${S.pdfBusy||!has?'disabled':''} onclick="xPDF('sc')"><span class="pbi">Programma completo</span><span class="pbd">Tabella per giorno</span><span class="pbb">Scarica</span></button>
+  <button class="pb" ${S.pdfBusy||!has?'disabled':''} onclick="xPDF('cl')"><span class="pbi">Schede per team</span><span class="pbd">Una pagina per team</span><span class="pbb">Scarica</span></button>
+  <button class="pb" ${S.pdfBusy||!S.clubs.filter(c=>!c.auto).length?'disabled':''} onclick="xPDF('fl')"><span class="pbi">Riepilogo barche</span><span class="pbd">Desiderata vs assegnato</span><span class="pbb">Scarica</span></button>
+  ${S.pdfBusy?`<div style="text-align:center;color:#1D4ED8;font-weight:600;margin-top:10px">Generazione...</div>`:''}`;}
+
+function hGate(){return`<div style="text-align:center;color:#94A3B8;padding:80px 16px"><div style="font-size:48px;margin-bottom:12px">lock</div><p style="margin-bottom:20px">Area riservata.</p><button onclick="set({showLogin:true})" style="background:#1D4ED8;color:white;border:none;border-radius:12px;padding:12px 24px;font-size:15px;font-weight:700">Accedi come Admin</button></div>`;}
+function hLogin(){return`<div class="ov" onclick="set({showLogin:false,pwd:'',pwdErr:false})"><div class="modal" onclick="event.stopPropagation()" style="max-width:300px;text-align:center">
+  <div style="font-size:14px;color:#64748B;margin-bottom:20px">Password admin</div>
+  <input type="password" id="pwi" class="fi" placeholder="Password" style="text-align:center;margin-bottom:${S.pwdErr?'6px':'16px'}" onkeydown="if(event.key==='Enter')xLI()">
+  ${S.pwdErr?`<div style="font-size:12px;color:#DC2626;margin-bottom:12px">Password errata</div>`:''}
+  <button class="bp" onclick="xLI()" style="width:100%">Entra</button>
+</div></div>`;}
+
+function hEC(){const {day,sl,line}=S.editCell;const cell=S.sched[day.date][sl.id][line];const cur=cell?.ids||[];const all=S.clubs.filter(c=>isAct(c,day.date));
+  return`<div class="ov" onclick="set({editCell:null})"><div class="modal" onclick="event.stopPropagation()">
+    <div class="mt">MODIFICA SLOT</div><div class="ms">${day.label} ${sl.label} L${line} Campo ${CAMPO[line]}</div>
+    <label class="fl">Team su questa linea</label>
+    <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:16px;max-height:280px;overflow-y:auto">
+      ${all.map(c=>{const chk=cur.includes(c.id);const w=cBW(c);
+        return`<label style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;border:1.5px solid ${chk?c.color:'#E2E8F0'};background:${chk?rg(c.color,.07):'white'};cursor:pointer">
+          <input type="checkbox" value="${c.id}" ${chk?'checked':''} id="eck-${c.id}" style="width:15px;height:15px;accent-color:${c.color};flex-shrink:0" onchange="ecUpdate()">
+          <div style="width:10px;height:10px;border-radius:50%;background:${c.color};flex-shrink:0"></div>
+          <span style="font-weight:700;font-size:13px;color:${c.color};flex:1">${c.name}</span>
+          ${(w.s||w.d)?`<span class="bw" style="background:${rg(c.color,.12)};color:${c.color}">${bwStr(w)}</span>`:''}
+        </label>`;}).join('')}
+    </div>
+    <div id="ec-boat-preview" style="padding:9px 12px;background:#F8FAFC;border-radius:10px;font-size:12px;color:#64748B;margin-bottom:18px"></div>
+    <div style="display:flex;gap:10px"><button class="bp" onclick="xSC()" style="flex:1">Salva</button><button class="bs" onclick="set({editCell:null})" style="flex:1">Annulla</button></div>
+  </div></div>`;}
+
+function hGM(){const gi=S.editGIdx;const isNew=gi==='new';const g=isNew?{members:[]}:(S.groups[gi]||{members:[]});const sh=S.clubs.filter(c=>c.sharable&&!c.auto);const usedElsewhere=new Set(S.groups.filter((_,i)=>i!==gi&&gi!=='new').flatMap(x=>x.members));const selIds=S.gmSelected;const selTeams=selIds.map(id=>S.clubs.find(c=>c.id===id)).filter(Boolean);const tw=unitBW(selTeams);const over=tw.s>S.stk.s||tw.d>S.stk.d;
+  return`<div class="ov" onclick="set({showGM:false,editGIdx:null,gmSelected:[]})"><div class="modal" onclick="event.stopPropagation()">
+    <div class="mt">${isNew?'+ NUOVO GRUPPO':'MODIFICA GRUPPO'}</div>
+    <div class="ms">Seleziona i team che alleneranno insieme sulla stessa linea.</div>
+    <div style="display:flex;flex-direction:column;gap:5px;max-height:320px;overflow-y:auto;margin-bottom:14px">
+      ${!sh.length?`<div style="text-align:center;color:#CBD5E1;padding:20px">Nessun team condivisibile.</div>`:''}
+      ${sh.map(c=>{const inSel=selIds.includes(c.id);const inOther=usedElsewhere.has(c.id)&&!inSel;const w=cBW(c);
+        return`<label style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;border:1.5px solid ${inSel?c.color:'#E2E8F0'};background:${inSel?rg(c.color,.07):'white'};cursor:${inOther?'not-allowed':'pointer'};opacity:${inOther?.45:1}">
+          <input type="checkbox" ${inSel?'checked':''} ${inOther?'disabled':''} id="gck-${c.id}" style="width:15px;height:15px;accent-color:${c.color};flex-shrink:0" onchange="gmToggle('${c.id}')">
+          <div style="width:10px;height:10px;border-radius:50%;background:${c.color};flex-shrink:0"></div>
+          <span style="font-weight:700;font-size:13px;color:${c.color};flex:1">${c.name}</span>
+          ${inOther?`<span style="font-size:10px;color:#CBD5E1">altro gruppo</span>`:''}
+          ${(w.s||w.d)?`<span class="bw" style="background:${rg(c.color,.12)};color:${c.color}">${bwStr(w)}</span>`:''}
+        </label>`;}).join('')}
+    </div>
+    <div style="padding:10px 12px;border-radius:10px;background:${over?'#FEF2F2':'#F8FAFC'};border:1px solid ${over?'#FECACA':'#E2E8F0'};font-size:13px;margin-bottom:18px">
+      Totale barche gruppo: <strong style="color:${over?'#DC2626':'#059669'}">${bwStr(tw)||'nessuna'}</strong>
+      ${over?` -- SUPERA STOCK (${S.stk.s}x1x/${S.stk.d}x2x)`:''}
+    </div>
+    <div style="display:flex;gap:10px"><button class="bp" onclick="xSaveGroup()" style="flex:1">Salva gruppo</button><button class="bs" onclick="set({showGM:false,editGIdx:null,gmSelected:[]})" style="flex:1">Annulla</button></div>
+  </div></div>`;}
+
+function hCF(){const isN=S.editCId==='new';const f=S.cf;const want=f.want||{s:0,d:0};
+  return`<div class="ov" onclick="set({showCF:false,editCId:null})"><div class="modal" onclick="event.stopPropagation()">
+    <div class="mt">${isN?'+ NUOVO TEAM':'MODIFICA TEAM'}</div><div style="margin-bottom:16px"></div>
+    <label class="fl">Nome *</label>
+    <input id="cfn" class="fi" placeholder="es. EGY" value="${f.name}" oninput="S.cf.name=this.value;render()" style="margin-bottom:14px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div><label class="fl">Arrivo</label><select id="cfa" class="fi" onchange="S.cf.in=this.value">${DAYS.map(d=>`<option value="${d.date}" ${f.in===d.date?'selected':''}>${d.label}</option>`).join('')}</select></div>
+      <div><label class="fl">Partenza</label><select id="cfd" class="fi" onchange="S.cf.out=this.value">${DAYS.map(d=>`<option value="${d.date}" ${f.out===d.date?'selected':''}>${d.label}</option>`).join('')}</select></div>
+    </div>
+    <label class="fl">Colore</label>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">${PAL.map((col,i)=>`<button class="cd" onclick="S.cf.ci=${i};render()" style="background:${col};transform:${f.ci===i?'scale(1.3)':'scale(1)'};outline:${f.ci===i?`2px solid ${col}`:'none'};outline-offset:2px"></button>`).join('')}</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px 14px;border-radius:10px;border:1.5px solid ${f.auto?'#BFDBFE':'#E2E8F0'};background:${f.auto?'#EFF6FF':'white'}">
+        <input type="checkbox" id="cfa2" ${f.auto?'checked':''} onchange="S.cf.auto=this.checked;S.cf.sharable=false;render()" style="width:16px;height:16px;margin-top:1px;flex-shrink:0">
+        <div><div style="font-size:13px;font-weight:600;color:${f.auto?'#1D4ED8':'#374151'}">Team autonomo</div><div style="font-size:11px;color:#94A3B8">Porta le proprie barche -- non usa lo stock</div></div>
+      </label>
+      ${!f.auto?`<label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px 14px;border-radius:10px;border:1.5px solid ${f.sharable?'#86EFAC':'#E2E8F0'};background:${f.sharable?'#F0FDF4':'white'}">
+        <input type="checkbox" id="cfs" ${f.sharable?'checked':''} onchange="S.cf.sharable=this.checked;render()" style="width:16px;height:16px;margin-top:1px;flex-shrink:0">
+        <div><div style="font-size:13px;font-weight:600;color:${f.sharable?'#15803D':'#374151'}">Puo condividere linea</div><div style="font-size:11px;color:#94A3B8">Puo essere messo in un gruppo</div></div>
+      </label>`:''}
+    </div>
+    ${!f.auto?`<label class="fl">Desiderata barche</label>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">${BT.map(bt=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:12px;background:${rg(bt.col,.07)};border:1.5px solid ${(want[bt.id]||0)>0?bt.col:'#E2E8F0'}">
+      <div style="display:flex;align-items:center;gap:10px"><span style="background:${bt.col};color:white;border-radius:7px;padding:3px 10px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800">${bt.sh}</span><span style="font-size:14px;font-weight:600;color:#374151">${bt.lbl}</span></div>
+      <div class="qr"><button class="qb" onclick="xW('${bt.id}',-1)">-</button><span class="qv">${want[bt.id]||0}</span><button class="qb" onclick="xW('${bt.id}',1)">+</button></div>
+    </div>`).join('')}</div>`:''}
+    <div style="display:flex;gap:10px"><button class="bp" onclick="xSv()" style="flex:1">Salva</button><button class="bs" onclick="set({showCF:false,editCId:null})" style="flex:1">Annulla</button></div>
+  </div></div>`;}
+
+function xPDF(t){if(S.pdfBusy)return;set({pdfBusy:true});setTimeout(()=>{try{if(t==='sc')pSc();else if(t==='cl')pCl();else pFl();}catch(e){console.error(e);}set({pdfBusy:false});},50);}
+function cTxt(cell){const ids=cell?.ids||[];const teams=ids.map(id=>S.clubs.find(c=>c.id===id)).filter(Boolean);if(!teams.length)return'';return teams.map(c=>`${c.name}${bstr(c)?'\n'+bstr(c):''}`).join('\n+ ');}
+function pSc(){
+  const{jsPDF}=window.jspdf;const doc=new jsPDF('landscape','mm','a4');const nv=[10,37,64];let py=0;let fp=true;
+  DAYS.forEach(day=>{const pr=S.clubs.filter(c=>isAct(c,day.date)).map(c=>c.name).join(', ')||'--';if(!fp&&py>155){doc.addPage();py=0;}
+    if(fp){doc.setFillColor(...nv);doc.rect(0,0,297,18,'F');doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('FILIPPI TROPHY 2026 - PROGRAMMA ALLENAMENTI',148.5,8,{align:'center'});doc.setFontSize(8);doc.setFont('helvetica','normal');doc.text('Camp Pre-Regata 11-15 Aprile 2026',148.5,15,{align:'center'});py=22;fp=false;}
+    doc.setFillColor(29,78,216);doc.rect(10,py,277,8,'F');doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text(`${day.day} ${day.num} APRILE`,14,py+5.5);doc.setFont('helvetica','normal');doc.setFontSize(7);doc.text(pr,280,py+5.5,{align:'right'});doc.setTextColor(0,0,0);py+=10;
+    const body=SLOTS.map(sl=>{const tot=slotTot(S.clubs,S.sched,day.date,sl.id);return[`${sl.ses}\n${sl.label}`,...LINES.map(l=>cTxt(S.sched?.[day.date]?.[sl.id]?.[l]||{})),tot.s>0?String(tot.s):'',tot.d>0?String(tot.d):''];});
+    doc.autoTable({head:[['Slot','Linea 1','Linea 2','Linea 3','Linea 4',`1x/${S.stk.s}`,`2x/${S.stk.d}`]],body,startY:py,margin:{left:10,right:10},headStyles:{fillColor:[241,245,249],textColor:[15,23,42],fontStyle:'bold',fontSize:8,cellPadding:{top:3,bottom:3,left:4,right:4}},styles:{fontSize:8,cellPadding:{top:4,bottom:4,left:4,right:4},lineColor:[226,232,240],lineWidth:0.1,valign:'middle'},columnStyles:{0:{fontStyle:'bold',cellWidth:26,fillColor:[248,250,252]},5:{cellWidth:14,halign:'center',fontStyle:'bold'},6:{cellWidth:14,halign:'center',fontStyle:'bold'}},alternateRowStyles:{fillColor:[252,253,255]},
+      didParseCell:(data)=>{if(data.section==='body'&&data.column.index>=1&&data.column.index<=4){const txt=String(data.cell.raw||'');if(!txt)return;const nm=txt.split('\n')[0];const cl=S.clubs.find(c=>c.name===nm);if(cl){const[r,g,b]=rgb(cl.color);data.cell.styles.textColor=[r,g,b];data.cell.styles.fontStyle='bold';}}if(data.section==='body'&&(data.column.index===5||data.column.index===6)){const v=parseInt(data.cell.raw)||0;const lim=data.column.index===5?S.stk.s:S.stk.d;if(v>lim)data.cell.styles.textColor=[220,38,38];else if(v===lim)data.cell.styles.textColor=[217,119,6];else if(v>0)data.cell.styles.textColor=[5,150,105];}}
+    });py=doc.lastAutoTable.finalY+8;
+  });
+  const pg=doc.getNumberOfPages();for(let i=1;i<=pg;i++){doc.setPage(i);doc.setFontSize(7);doc.setTextColor(148,163,184);doc.text(`Generato ${new Date().toLocaleDateString('it-IT')} Pag ${i}/${pg}`,148.5,205,{align:'center'});}
+  doc.save('ft2026-programma.pdf');
+}
+function pCl(){
+  const{jsPDF}=window.jspdf;const doc=new jsPDF('portrait','mm','a4');
+  S.clubs.forEach((club,ci)=>{if(ci>0)doc.addPage();const[cr,cg,cb]=rgb(club.color);
+    doc.setFillColor(cr,cg,cb);doc.rect(0,0,210,28,'F');doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(20);doc.text(club.name.toUpperCase(),105,14,{align:'center'});doc.setFontSize(8);doc.setFont('helvetica','normal');doc.text('FILIPPI TROPHY 2026 CAMP 11-15 APRILE',105,22,{align:'center'});
+    doc.setTextColor(0,0,0);let y=36;const aD=DAYS.find(d=>d.date===club.in);const dD=DAYS.find(d=>d.date===club.out);doc.setFontSize(10);doc.setTextColor(100,116,139);doc.text(`Presenza: ${aD?.label||club.in} - ${dD?.label||club.out}`,15,y);doc.setTextColor(0,0,0);y+=10;
+    if(!club.auto){const fl=club.fleet||{};const its=BT.filter(b=>(club.want?.[b.id]||0)>0);if(its.length){doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(cr,cg,cb);doc.text('BARCHE',15,y);doc.setTextColor(0,0,0);y+=5;doc.autoTable({head:[['Tipo','Descrizione','Desiderata','Assegnate']],body:its.map(b=>[b.sh,b.lbl,String(club.want[b.id]||0),String(fl[b.id]||0)]),startY:y,margin:{left:15,right:15},headStyles:{fillColor:[cr,cg,cb],textColor:255,fontStyle:'bold'},styles:{fontSize:10,cellPadding:3},columnStyles:{0:{fontStyle:'bold',cellWidth:18},2:{halign:'center',cellWidth:24},3:{halign:'center',fontStyle:'bold',cellWidth:24}},alternateRowStyles:{fillColor:[248,250,252]}});y=doc.lastAutoTable.finalY+8;}}
+    const my=[];DAYS.forEach(day=>SLOTS.forEach(sl=>LINES.forEach(l=>{const ids=S.sched?.[day.date]?.[sl.id]?.[l]?.ids||[];if(ids.includes(club.id)){const partners=ids.filter(id=>id!==club.id).map(id=>S.clubs.find(c=>c.id===id)).filter(Boolean);my.push({day,sl,l,partners});}})));
+    if(my.length){doc.setFontSize(11);doc.setFont('helvetica','bold');doc.setTextColor(cr,cg,cb);doc.text('PROGRAMMA',15,y);doc.setTextColor(0,0,0);y+=5;doc.autoTable({head:[['Giorno','Sessione','Orario','Linea','Campo','Gruppo']],body:my.map(s=>[s.day.label,s.sl.ses,s.sl.label,`L${s.l}`,`Campo ${CAMPO[s.l]}`,s.partners.length?s.partners.map(p=>p.name).join(', '):'--']),startY:y,margin:{left:15,right:15},headStyles:{fillColor:[cr,cg,cb],textColor:255,fontStyle:'bold'},styles:{fontSize:10,cellPadding:3},alternateRowStyles:{fillColor:[248,250,252]}});}
+    else{doc.setFontSize(10);doc.setTextColor(148,163,184);doc.text('Nessuno slot assegnato.',15,y);}
+    doc.setFontSize(7);doc.setTextColor(148,163,184);doc.text('Filippi Trophy 2026',105,288,{align:'center'});
+  });doc.save('ft2026-schede-team.pdf');
+}
+function pFl(){
+  const{jsPDF}=window.jspdf;const doc=new jsPDF('portrait','mm','a4');const nv=[10,37,64];
+  doc.setFillColor(...nv);doc.rect(0,0,210,26,'F');doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text('FILIPPI TROPHY 2026',105,12,{align:'center'});doc.setFontSize(9);doc.setFont('helvetica','normal');doc.text('Desiderata vs Barche Assegnate',105,21,{align:'center'});doc.setTextColor(0,0,0);
+  const na=S.clubs.filter(c=>!c.auto);if(!na.length){doc.save('ft2026-barche.pdf');return;}
+  const body=na.map(c=>{const f=c.fleet||{};const w=c.want||{};return[c.name,w.s||0,f.s||0,w.d||0,f.d||0];});
+  const tr=['TOTALE',na.reduce((a,c)=>a+(c.want?.s||0),0),na.reduce((a,c)=>a+(c.fleet?.s||0),0),na.reduce((a,c)=>a+(c.want?.d||0),0),na.reduce((a,c)=>a+(c.fleet?.d||0),0)];
+  doc.autoTable({head:[['Team','Vuole 1x','Ass. 1x','Vuole 2x','Ass. 2x']],body:[...body,tr,['Stock',S.stk.s,'--',S.stk.d,'--']],startY:34,margin:{left:15,right:15},headStyles:{fillColor:nv,textColor:255,fontStyle:'bold'},styles:{fontSize:11,cellPadding:4,halign:'center'},columnStyles:{0:{halign:'left',fontStyle:'bold'}},alternateRowStyles:{fillColor:[241,245,249]},
+    didParseCell:(data)=>{if(data.row.index===body.length){data.cell.styles.fontStyle='bold';data.cell.styles.fillColor=[226,232,240];}if(data.row.index===body.length+1){data.cell.styles.fillColor=nv;data.cell.styles.textColor=255;data.cell.styles.fontStyle='bold';}if(data.section==='body'&&data.column.index>0&&data.row.index<body.length){const v=parseInt(data.cell.raw)||0;if(v>0)data.cell.styles.textColor=[29,78,216];else data.cell.styles.textColor=[203,213,225];}}
+  });doc.setFontSize(7);doc.setTextColor(148,163,184);doc.text(`Generato ${new Date().toLocaleDateString('it-IT')}`,105,doc.lastAutoTable.finalY+10,{align:'center'});doc.save('ft2026-barche.pdf');
+}
+
+function att(){const pi=document.getElementById('pwi');if(pi){pi.focus();pi.value=S.pwd;}const cn=document.getElementById('cfn');if(cn){cn.focus();cn.setSelectionRange(cn.value.length,cn.value.length);}ecUpdateBoats();}
+function ecUpdateBoats(){const bp=document.getElementById('ec-boat-preview');if(!bp)return;const chks=document.querySelectorAll('[id^="eck-"]:checked');const teams=[...chks].map(el=>S.clubs.find(c=>c.id===el.value)).filter(Boolean);const tw=unitBW(teams);const over=tw.s>S.stk.s||tw.d>S.stk.d;bp.innerHTML=teams.length?`Totale barche: <strong style="color:${over?'#DC2626':'#059669'}">${bwStr(tw)||'--'}</strong>${over?' -- SUPERA STOCK!':''}`:'Seleziona i team';}
+function ecUpdate(){ecUpdateBoats();}
+function xTab(id){if(id==='admin'&&!S.admin){set({showLogin:true});return;}set({tab:id});}
+function xLI(){const v=document.getElementById('pwi')?.value||S.pwd;if(v===PWD)set({admin:true,showLogin:false,pwd:'',pwdErr:false,tab:'admin'});else set({pwd:v,pwdErr:true});}
+function xSec(s2){if(s2==='al'&&!S.ta){const ta={};S.clubs.forEach(c=>ta[c.id]={s:c.fleet?.s||0,d:c.fleet?.d||0});S.ta=ta;}set({sec:s2});}
+function xOC(date,sid,line){const day=DAYS.find(d=>d.date===date);const sl=SLOTS.find(s=>s.id===sid);set({editCell:{day,sl,line:parseInt(line)}});}
+async function xSC(){const ids=[...document.querySelectorAll('[id^="eck-"]:checked')].map(el=>el.value);const{day,sl,line}=S.editCell;const s=JSON.parse(JSON.stringify(S.sched));s[day.date][sl.id][line]={ids};await sS(s);set({editCell:null});}
+async function xSK(t,d){const k={...S.stk};k[t]=Math.max(0,(k[t]||0)+d);await sK(k);}
+function xNC(){set({editCId:'new',cf:{name:'',in:'2026-04-11',out:'2026-04-15',ci:S.clubs.length%PAL.length,want:{s:0,d:0},auto:false,sharable:false},showCF:true});}
+function xEC(id){const c=S.clubs.find(x=>x.id===id);const ci=PAL.indexOf(c.color);set({editCId:id,cf:{name:c.name,in:c.in,out:c.out,ci:ci>=0?ci:0,want:{s:0,d:0,...(c.want||{})},auto:c.auto||false,sharable:c.sharable||false},showCF:true});}
+function xW(t,d){const w={...S.cf.want};w[t]=Math.max(0,(w[t]||0)+d);S.cf={...S.cf,want:w};render();}
+async function xSv(){const f=S.cf;if(!f.name.trim())return;const arr=document.getElementById('cfa')?.value||f.in;const dep=document.getElementById('cfd')?.value||f.out;S.cf.in=arr;S.cf.out=dep;const isA=document.getElementById('cfa2')?.checked||false;const isSh=!isA&&(document.getElementById('cfs')?.checked||false);const club={id:S.editCId==='new'?uid():S.editCId,name:f.name.trim(),in:arr,out:dep,color:PAL[f.ci>=0?f.ci:0],want:isA?{s:0,d:0}:{...f.want},fleet:S.editCId==='new'?{s:0,d:0}:(S.clubs.find(c=>c.id===S.editCId)?.fleet||{s:0,d:0}),auto:isA,sharable:isSh};const upd=S.editCId==='new'?[...S.clubs,club]:S.clubs.map(c=>c.id===S.editCId?club:c);await sC(upd);set({showCF:false,editCId:null});}
+async function xDC(id){if(!confirm('Eliminare?'))return;const ng=S.groups.map(g=>({...g,members:g.members.filter(m=>m!==id)})).filter(g=>g.members.length>0);S.groups=ng;await sG(ng);await sC(S.clubs.filter(c=>c.id!==id));}
+function xCA(){S.ta=calcAlloc(S.stk,S.clubs);render();}
+function xUA(cid,t,val,inp){if(!S.ta)return;const n=Math.max(0,parseInt(val)||0);S.ta[cid][t]=n;BT.forEach(bt=>{const u=Object.values(S.ta).reduce((a,v)=>a+(v[bt.id]||0),0);const av=S.stk[bt.id]||0;const pct=av>0?Math.min(100,u/av*100):0;const lb=document.getElementById(`al-${bt.id}`);const br=document.getElementById(`ab-${bt.id}`);if(lb)lb.textContent=`${u}/${av}`;if(br){br.style.width=pct+'%';br.style.background=u>av?'#DC2626':u===av&&av>0?'#D97706':bt.col;}if(inp){const cl=S.clubs.find(c=>c.id===cid);const w=cl?.want?.[t]||0;inp.className='an'+(n>w&&w>0?' ov2':n>0&&n<=w?' sat':'');}});}
+async function xFA(){if(!S.ta)return;const upd=S.clubs.map(c=>({...c,fleet:{s:S.ta[c.id]?.s||0,d:S.ta[c.id]?.d||0}}));await sC(upd);alert('Assegnazione salvata!');}
+function xNewGroup(){set({showGM:true,editGIdx:'new',gmSelected:[]});}
+function xEditGroup(gi){const g=S.groups[gi];set({showGM:true,editGIdx:gi,gmSelected:[...(g?.members||[])]});}
+async function xDelGroup(gi){if(!confirm('Eliminare il gruppo?'))return;await sG(S.groups.filter((_,i)=>i!==gi));}
+function gmToggle(id){const sel=[...S.gmSelected];const idx=sel.indexOf(id);if(idx>=0)sel.splice(idx,1);else sel.push(id);S.gmSelected=sel;render();}
+async function xSaveGroup(){const members=[...S.gmSelected];if(!members.length){alert('Seleziona almeno un team.');return;}const gi=S.editGIdx;const isNew=gi==='new';const newGroups=isNew?[...S.groups,{id:uid(),members}]:S.groups.map((g,i)=>i===gi?{...g,members}:g);await sG(newGroups);set({showGM:false,editGIdx:null,gmSelected:[]});}
+async function xGR(){if(!confirm('Generare il programma completo? Sovrascrive tutti gli slot.'))return;const ns=applyRot(S.clubs,S.sched,S.groups);await sS(ns);set({tab:'grid'});}
+
+render();load();
+</script>
+</body>
+</html>
