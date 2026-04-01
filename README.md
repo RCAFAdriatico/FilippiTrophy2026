@@ -1,2 +1,2 @@
 # FilippiTrophy2026
-Training slot booking system
+Training Manager System
