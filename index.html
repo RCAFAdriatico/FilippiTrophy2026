@@ -21,6 +21,7 @@ const FDB=firebase.database();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;background:#EEF2F8;min-height:100vh}
@@ -677,6 +678,16 @@ function hEC2(){
         ${!pagato?`<div><div style="font-size:10px;color:#94A3B8;margin-bottom:4px">MANCA</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:#DC2626">€ ${fmt(Math.max(0,due))}</div></div>`:`<div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:#059669">✓</div>`}
       </div>
     </div>
+    <div style="padding:10px 16px;border-top:1px solid #E2E8F0;background:white">`;
+    html+=`<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">`;
+    html+=`<span style="font-size:10px;color:#94A3B8;align-self:center;margin-right:4px">PREVENTIVO:</span>`;
+    html+=`<button onclick="genDocPDF('${c.id}','prev')" style="background:#0A2540;color:white;border:none;border-radius:10px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer">📄 PDF</button>`;
+    html+=`<button onclick="genDocXLSX('${c.id}','prev')" style="background:#1D4ED8;color:white;border:none;border-radius:10px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer">📊 Excel</button>`;
+    html+=`<span style="font-size:10px;color:#94A3B8;align-self:center;margin-left:8px;margin-right:4px">CONSUNTIVO:</span>`;
+    html+=`<button onclick="genDocPDF('${c.id}','cons')" style="background:#7C3AED;color:white;border:none;border-radius:10px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer">📄 PDF</button>`;
+    html+=`<button onclick="genDocXLSX('${c.id}','cons')" style="background:#059669;color:white;border:none;border-radius:10px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer">📊 Excel</button>`;
+    html+=`</div>`;
+    html+=`</div>
     </div>`;
   });
   return html;
@@ -704,6 +715,174 @@ async function xSavePrices(){
 }
 async function xSetPaid(id,val){
   const m={...S.payments};m[id]=parseFloat(val)||0;await sM(m);
+}
+
+// ── PREVENTIVO HELPERS ───────────────────────────────────────────────
+function prevData(cid){
+  const c=S.clubs.find(x=>x.id===cid);if(!c)return null;
+  const ct=calcTotal(c);const p=S.prices;const w=cBW(c);
+  const actual=daysActual(c);
+  const rows=[];
+  const addRow=(code,desc,unit,upr,qty1,qty2,total,notes)=>rows.push({code,desc,unit,upr,qty1,qty2,total,notes});
+  addRow('S1','Race course usage (daily setup)','team/day',p.line||0,ct.dLine,'—',ct.lineCost,'Non-exclusive; 4 buoy lanes; min. 2h/team/session');
+  if(w.s>0)addRow('S2','Solo / 1x Boat use','boat/day',p.s||0,ct.dS,w.s,ct.sCost,'Not exclusive use; oars included');
+  if(w.d>0)addRow('S3','Double / 2x Boat use','boat/day',p.d||0,ct.dD,w.d,ct.dCost,'Not exclusive use; oars included');
+  if(ct.dAssist>0)addRow('S5','Motorboat assistance (mandatory)','day/shared',p.assist||0,ct.dAssist,'shared',ct.assistCost,'Cost shared among teams; 1 motorboat + 2 operators');
+  if(ct.dGym>0)addRow('S6/S7','Indoor / Gym use','day or hour',p.gym||0,ct.dGym,'—',ct.gymCost,'Booking required');
+  return{c,ct,rows,actual};
+}
+
+function genDocPDF(cid,tipo){
+  const d=prevData(cid);if(!d)return;
+  const{c,ct,rows,actual}=d;
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF('portrait','mm','a4');
+  const nv=[10,37,64];const W=210;
+  // Header
+  doc.setFillColor(...nv);doc.rect(0,0,W,28,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(14);
+  doc.text('CLUB NAUTICO FANESE',W/2,10,{align:'center'});
+  doc.setFontSize(10);doc.setFont('helvetica','normal');
+  doc.text('Beach Sprint Training Camp — Filippi Cup 2026',W/2,17,{align:'center'});
+  doc.setFontSize(9);doc.text('Official Services — Quote / Preventivo',W/2,24,{align:'center'});
+  // Team box
+  doc.setTextColor(0,0,0);let y=36;
+  doc.setFillColor(238,242,248);doc.rect(14,y-4,W-28,22,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(...nv);
+  doc.text(c.name.toUpperCase(),16,y+2);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(100,116,139);
+  const cin=c.in||c.arrivalDate;const cout=c.out||c.departureDate;
+  const aD=DAYS.find(x=>x.date===cin);const dD=DAYS.find(x=>x.date===cout);
+  doc.text(`Presence: ${aD?.label||cin||'?'} → ${dD?.label||cout||'?'}   |   ${actual} days`,16,y+9);
+  doc.text(`Document type: QUOTE / PREVENTIVO   |   Date: ${new Date().toLocaleDateString('en-GB')}`,16,y+15);
+  y+=26;
+  // Services table
+  doc.autoTable({
+    head:[['Code','Service Description','Unit','Unit Price (€)','Days / Qty','Qty2','Total (€)']],
+    body:rows.map(r=>[r.code,r.desc,r.unit,
+      {content:fmt(r.upr),styles:{halign:'right'}},
+      {content:String(r.qty1),styles:{halign:'center'}},
+      {content:String(r.qty2),styles:{halign:'center'}},
+      {content:fmt(r.total),styles:{halign:'right',fontStyle:'bold'}}
+    ]),
+    startY:y,margin:{left:14,right:14},
+    headStyles:{fillColor:nv,textColor:255,fontStyle:'bold',fontSize:9},
+    styles:{fontSize:9,cellPadding:3},
+    columnStyles:{0:{cellWidth:14},1:{cellWidth:60},2:{cellWidth:20},3:{cellWidth:22},4:{cellWidth:16},5:{cellWidth:14},6:{cellWidth:22}},
+    alternateRowStyles:{fillColor:[248,250,252]}
+  });
+  y=doc.lastAutoTable.finalY+4;
+  // Total
+  doc.setFillColor(...[29,78,216]);doc.rect(14,y,W-28,10,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(11);
+  doc.text('TOTAL',16,y+7);
+  doc.text(`€ ${fmt(ct.total)}`,W-16,y+7,{align:'right'});
+  y+=18;
+  // Paid / Due
+  const paid=S.payments[cid]||0;const due=ct.total-paid;
+  if(!isPrev||paid>0){
+    doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');doc.setFontSize(9);
+    if(!isPrev){
+      // Consuntivo: show prominent payment status box
+      const boxCol=due<=0.01?[5,150,105]:[220,38,38];
+      doc.setFillColor(...boxCol);doc.rect(14,y,W-28,12,'F');
+      doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(10);
+      doc.text(`Amount paid: € ${fmt(paid)}`,16,y+8);
+      doc.text(`Balance due: € ${fmt(Math.max(0,due))}`,W-16,y+8,{align:'right'});
+      y+=18;
+    } else if(paid>0){
+      doc.text(`Amount paid: € ${fmt(paid)}`,16,y);
+      doc.text(`Balance due: € ${fmt(Math.max(0,due))}`,W-16,y,{align:'right'});
+      y+=8;
+    }
+  }
+  // Conditions
+  if(y>220){doc.addPage();y=20;}
+  doc.setFillColor(248,250,252);doc.rect(14,y,W-28,6,'F');
+  doc.setTextColor(...nv);doc.setFont('helvetica','bold');doc.setFontSize(10);
+  doc.text('GENERAL BOOKING AND PAYMENT CONDITIONS',W/2,y+4,{align:'center'});
+  y+=10;
+  const conds=[
+    ['Scope','These conditions apply to all services included in the Official Services Package and Pricing of the Beach Sprint Training Camp – Filippi Cup 2026.'],
+    ['Booking','Bookings are valid only upon written request and formal confirmation by the organizing committee.'],
+    ['Payment','Payment must be made in advance by bank transfer at the time of booking. A booking is confirmed only upon receipt of the full amount due.\nIBAN: IT41F0849124300000220000594 — BIC: CCRTIT2TCIV'],
+    ['Payment Terms','The total amount must be settled within the deadline in the booking confirmation. In case of non-payment, the organization reserves the right to cancel the booking and reallocate the service.'],
+    ['Cancellation','In the event of cancellation by the team, payments made are non-refundable. Modification requests are subject to availability and approval.'],
+    ['Liability','Each team is responsible for the proper use of facilities, equipment and assigned areas. Any damage will be charged to the responsible team.'],
+  ];
+  doc.setFontSize(8);
+  conds.forEach(([title,text])=>{
+    if(y>270){doc.addPage();y=20;}
+    doc.setFont('helvetica','bold');doc.setTextColor(...nv);
+    doc.text(title+':',16,y);
+    doc.setFont('helvetica','normal');doc.setTextColor(50,50,50);
+    const lines=doc.splitTextToSize(text,W-42);
+    doc.text(lines,38,y);
+    y+=lines.length*4.5+2;
+  });
+  // Signature
+  y+=6;
+  if(y>260){doc.addPage();y=20;}
+  doc.setDrawColor(200,200,200);doc.line(14,y+12,80,y+12);doc.line(W-80,y+12,W-14,y+12);
+  doc.setFontSize(8);doc.setTextColor(148,163,184);
+  doc.text('Date / Place',14,y+17);
+  doc.text('Stamp / Signature',W-14,y+17,{align:'right'});
+  // Footer
+  const pg=doc.getNumberOfPages();
+  for(let i=1;i<=pg;i++){
+    doc.setPage(i);doc.setFontSize(7);doc.setTextColor(148,163,184);
+    doc.text(`Club Nautico Fanese — Filippi Cup 2026  |  Page ${i}/${pg}`,W/2,292,{align:'center'});
+  }
+  doc.save(`${isPrev?'preventivo':'consuntivo'}_${c.name}_filippi2026.pdf`);
+}
+
+function genDocXLSX(cid,tipo){
+  if(!window.XLSX){alert('SheetJS non caricato, riprova.');return;}
+  const d=prevData(cid);if(!d)return;
+  const{c,ct,rows,actual}=d;
+  const wb=XLSX.utils.book_new();
+  const cin=c.in||c.arrivalDate;const cout=c.out||c.departureDate;
+  const aD=DAYS.find(x=>x.date===cin);const dD=DAYS.find(x=>x.date===cout);
+  const data=[
+    ['CLUB NAUTICO FANESE','','','','','',''],
+    ['Beach Sprint Training Camp — Filippi Cup 2026','','','','','',''],
+    ['QUOTE / PREVENTIVO','','','','','',''],
+    [],
+    ['Team:',c.name,'','Dates:',`${aD?.label||cin||'?'} → ${dD?.label||cout||'?'}`,'',''],
+    ['Document type:','Quote / Preventivo','','Date:',new Date().toLocaleDateString('en-GB'),'',''],
+    [],
+    ['Code','Service Description','Unit','Unit Price (€)','Days / Qty','Qty','Total (€)'],
+    ...rows.map(r=>[r.code,r.desc,r.unit,r.upr,r.qty1,r.qty2,r.total]),
+    [],
+    ['','','','','','TOTAL',ct.total],
+  ];
+  const paidX=S.payments[cid]||0;
+  if(!isPrevX||paidX>0){
+    data.push(['','','','','','Amount paid',paidX]);
+    data.push(['','','','','','Balance due',Math.max(0,ct.total-paidX)]);
+  }
+  data.push([]);
+  data.push(['GENERAL BOOKING AND PAYMENT CONDITIONS','','','','','','']);
+  data.push(['Scope:','These conditions apply to all services included in the Official Services Package and Pricing of the Beach Sprint Training Camp – Filippi Cup 2026.','','','','','']);
+  data.push(['Booking:','Bookings are valid only upon written request and formal confirmation by the organizing committee.','','','','','']);
+  data.push(['Payment:','Payment must be made in advance by bank transfer. IBAN: IT41F0849124300000220000594 — BIC: CCRTIT2TCIV','','','','','']);
+  data.push(['Payment Terms:','The total amount must be settled within the deadline in the booking confirmation.','','','','','']);
+  data.push(['Cancellation:','In the event of cancellation, payments made are non-refundable.','','','','','']);
+  data.push(['Liability:','Each team is responsible for the proper use of facilities and equipment.','','','','','']);
+  data.push([]);
+  data.push(['Date / Place:','','','Stamp / Signature:','','','']);
+
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  // Column widths
+  ws['!cols']=[{wch:14},{wch:48},{wch:16},{wch:16},{wch:12},{wch:12},{wch:14}];
+  // Merge header rows
+  ws['!merges']=[
+    {s:{r:0,c:0},e:{r:0,c:6}},
+    {s:{r:1,c:0},e:{r:1,c:6}},
+    {s:{r:2,c:0},e:{r:2,c:6}},
+  ];
+  XLSX.utils.book_append_sheet(wb,ws,'Preventivo');
+  XLSX.writeFile(wb,`${isPrevX?'preventivo':'consuntivo'}_${c.name}_filippi2026.xlsx`);
 }
 render();load();
 </script>
