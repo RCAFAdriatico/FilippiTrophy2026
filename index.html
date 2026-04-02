@@ -733,6 +733,7 @@ function prevData(cid){
 }
 
 function genDocPDF(cid,tipo){
+  try{
   const d=prevData(cid);if(!d)return;
   const{c,ct,rows,actual}=d;
   const{jsPDF}=window.jspdf;
@@ -834,10 +835,12 @@ function genDocPDF(cid,tipo){
     doc.text(`Club Nautico Fanese — Filippi Cup 2026  |  Page ${i}/${pg}`,W/2,292,{align:'center'});
   }
   doc.save(`${isPrev?'preventivo':'consuntivo'}_${c.name}_filippi2026.pdf`);
+  }catch(e){alert('Errore PDF: '+e.message);console.error(e);}
 }
 
 function genDocXLSX(cid,tipo){
-  if(!window.XLSX){alert('SheetJS non caricato, riprova.');return;}
+  try{
+  if(!window.XLSX){alert('SheetJS non disponibile — uso download HTML');genDocXLSXFallback(cid,tipo);return;}
   const d=prevData(cid);if(!d)return;
   const{c,ct,rows,actual}=d;
   const wb=XLSX.utils.book_new();
@@ -883,6 +886,20 @@ function genDocXLSX(cid,tipo){
   ];
   XLSX.utils.book_append_sheet(wb,ws,'Preventivo');
   XLSX.writeFile(wb,`${isPrevX?'preventivo':'consuntivo'}_${c.name}_filippi2026.xlsx`);
+  }catch(e){alert('Errore Excel: '+e.message);console.error(e);}
+}
+
+function genDocXLSXFallback(cid,tipo){
+  const d=prevData(cid);if(!d)return;
+  const{c,ct,rows}=d;const isPrevX=tipo==='prev';
+  let csv='Code,Service Description,Unit,Unit Price,Days/Qty,Qty,Total\n';
+  rows.forEach(r=>{csv+=`${r.code},"${r.desc}",${r.unit},${r.upr},${r.qty1},${r.qty2},${r.total}\n`;});
+  csv+=`\n,,,,,,TOTAL,${ct.total}\n`;
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`${isPrevX?'preventivo':'consuntivo'}_${c.name}_filippi2026.csv`;
+  a.click();
 }
 render();load();
 </script>
