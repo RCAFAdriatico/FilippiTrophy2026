@@ -140,7 +140,23 @@ const ST={
   }
 };
 
-const DAYS=[{date:'2026-04-11',label:'Sab 11 Apr',day:'SAB',num:'11'},{date:'2026-04-12',label:'Dom 12 Apr',day:'DOM',num:'12'},{date:'2026-04-13',label:'Lun 13 Apr',day:'LUN',num:'13'},{date:'2026-04-14',label:'Mar 14 Apr',day:'MAR',num:'14'},{date:'2026-04-15',label:'Mer 15 Apr',day:'MER',num:'15'}];
+const DAYS=[
+  {date:'2026-04-01',label:'Mer 1 Apr',day:'MER',num:'01'},
+  {date:'2026-04-02',label:'Gio 2 Apr',day:'GIO',num:'02'},
+  {date:'2026-04-03',label:'Ven 3 Apr',day:'VEN',num:'03'},
+  {date:'2026-04-04',label:'Sab 4 Apr',day:'SAB',num:'04'},
+  {date:'2026-04-05',label:'Dom 5 Apr',day:'DOM',num:'05'},
+  {date:'2026-04-06',label:'Lun 6 Apr',day:'LUN',num:'06'},
+  {date:'2026-04-07',label:'Mar 7 Apr',day:'MAR',num:'07'},
+  {date:'2026-04-08',label:'Mer 8 Apr',day:'MER',num:'08'},
+  {date:'2026-04-09',label:'Gio 9 Apr',day:'GIO',num:'09'},
+  {date:'2026-04-10',label:'Ven 10 Apr',day:'VEN',num:'10'},
+  {date:'2026-04-11',label:'Sab 11 Apr',day:'SAB',num:'11'},
+  {date:'2026-04-12',label:'Dom 12 Apr',day:'DOM',num:'12'},
+  {date:'2026-04-13',label:'Lun 13 Apr',day:'LUN',num:'13'},
+  {date:'2026-04-14',label:'Mar 14 Apr',day:'MAR',num:'14'},
+  {date:'2026-04-15',label:'Mer 15 Apr',day:'MER',num:'15'}
+];
 const SLOTS=[{id:'M1',label:'8:30-10:30',ses:'Mattina'},{id:'M2',label:'10:30-12:30',ses:'Mattina'},{id:'P1',label:'14:00-16:00',ses:'Pom.'},{id:'P2',label:'16:00-18:00',ses:'Pom.'}];
 const LINES=[1,2,3,4];
 const CAMPO={1:'A',2:'A',3:'B',4:'B'};
@@ -179,7 +195,7 @@ function hydS(sv){const s=mkS();if(!sv)return s;DAYS.forEach(d=>SLOTS.forEach(sl
 function mgC(c){if(c.arrivalDate&&!c.in)c.in=c.arrivalDate;if(c.departureDate&&!c.out)c.out=c.departureDate;return c;}
 
 const K='ft26l';
-let S={clubs:[],stk:{s:5,d:5},sched:mkS(),groups:[],prices:{line:0,s:0,d:0,assist:0,gym:0},payments:{},serviceDays:{},tab:'grid',admin:false,loading:true,showLogin:false,pwd:'',pwdErr:false,editCell:null,showCF:false,editCId:null,cf:{name:'',in:'2026-04-11',out:'2026-04-15',ci:0,want:{s:0,d:0},auto:false,sharable:false},sec:'stk',day:0,selClub:null,pdfBusy:false,ta:null,showGM:false,editGIdx:null,gmSelected:[]};
+let S={clubs:[],stk:{s:5,d:5},sched:mkS(),groups:[],prices:{line:0,s:0,d:0,assist:0,gym:0},payments:{},serviceDays:{},teamPrices:{},tab:'grid',admin:false,loading:true,showLogin:false,pwd:'',pwdErr:false,editCell:null,showCF:false,editCId:null,cf:{name:'',fullName:'',in:'2026-04-01',out:'2026-04-15',ci:0,want:{s:0,d:0},auto:false,sharable:false},sec:'stk',day:0,selClub:null,pdfBusy:false,ta:null,showGM:false,editGIdx:null,gmSelected:[]};
 function set(p){S={...S,...p};render();}
 
 async function load(){
@@ -192,6 +208,7 @@ async function load(){
   try{const r=await ST.get(K+'-p');if(r)S.prices=JSON.parse(r.value);}catch{}
   try{const r=await ST.get(K+'-m');if(r)S.payments=JSON.parse(r.value);}catch{}
   try{const r=await ST.get(K+'-sd');if(r)S.serviceDays=JSON.parse(r.value);}catch{}
+  try{const r=await ST.get(K+'-tp');if(r)S.teamPrices=JSON.parse(r.value);}catch{}
   S.loading=false;S.selClub=S.clubs[0]?.id||null;render();
   // Real-time listeners — wait 600ms to avoid overwriting initial load
   let _fbReady=false;setTimeout(()=>{_fbReady=true;},600);
@@ -203,6 +220,7 @@ async function load(){
     FDB.ref('ft26/'+K+'-p').on('value',snap=>{if(!_fbReady||!snap.exists())return;S.prices=JSON.parse(snap.val());render();});
     FDB.ref('ft26/'+K+'-m').on('value',snap=>{if(!_fbReady||!snap.exists())return;S.payments=JSON.parse(snap.val());render();});
     FDB.ref('ft26/'+K+'-sd').on('value',snap=>{if(!_fbReady||!snap.exists())return;S.serviceDays=JSON.parse(snap.val());render();});
+    FDB.ref('ft26/'+K+'-tp').on('value',snap=>{if(!_fbReady||!snap.exists())return;S.teamPrices=JSON.parse(snap.val());render();});
     console.log('Firebase listeners attivi');
   }catch(e){console.warn('Listener error',e);}
 }
@@ -213,6 +231,7 @@ const sG=async g=>{S.groups=g;render();await ST.set(K+'-g',JSON.stringify(g));};
 const sP=async p=>{S.prices=p;render();await ST.set(K+'-p',JSON.stringify(p));};
 const sM=async m=>{S.payments=m;render();await ST.set(K+'-m',JSON.stringify(m));};
 const sSD=async s=>{S.serviceDays=s;render();await ST.set(K+'-sd',JSON.stringify(s));};
+const sTP=async t=>{S.teamPrices=t;render();await ST.set(K+'-tp',JSON.stringify(t));};
 async function clr(){if(!confirm('Cancellare tutti i dati?'))return;S.clubs=[];S.sched=mkS();S.stk={s:5,d:5};S.groups=[];S.ta=null;S.selClub=null;await sC([]);await sS(mkS());await sK({s:5,d:5});await sG([]);set({tab:'admin',sec:'stk'});}
 
 // ── FIREBASE SYNC MANUAL ────────────────────────────────────────────
@@ -227,6 +246,7 @@ async function xFBPush(){
     await FDB.ref('ft26/'+K+'-p').set(JSON.stringify(S.prices));
     await FDB.ref('ft26/'+K+'-m').set(JSON.stringify(S.payments));
     await FDB.ref('ft26/'+K+'-sd').set(JSON.stringify(S.serviceDays));
+    await FDB.ref('ft26/'+K+'-tp').set(JSON.stringify(S.teamPrices));
     if(el){el.className='gb';el.textContent='Dati caricati su Firebase! Gli altri dispositivi si aggiorneranno automaticamente.';}
   }catch(e){if(el){el.className='rb';el.textContent='Errore: '+e.message;}}
 }
@@ -241,6 +261,7 @@ async function xFBPull(){
     const rp=await FDB.ref('ft26/'+K+'-p').once('value');
     const rm=await FDB.ref('ft26/'+K+'-m').once('value');
     const rsd=await FDB.ref('ft26/'+K+'-sd').once('value');
+    const rtp=await FDB.ref('ft26/'+K+'-tp').once('value');
     if(rc.exists())S.clubs=JSON.parse(rc.val()).map(mgC);
     if(rs.exists())S.sched=hydS(JSON.parse(rs.val()));
     if(rk.exists())S.stk=JSON.parse(rk.val());
@@ -248,6 +269,7 @@ async function xFBPull(){
     if(rp.exists())S.prices=JSON.parse(rp.val());
     if(rm.exists())S.payments=JSON.parse(rm.val());
     if(rsd.exists())S.serviceDays=JSON.parse(rsd.val());
+    if(rtp.exists())S.teamPrices=JSON.parse(rtp.val());
     render();
     if(el){el.className='gb';el.textContent='Dati scaricati da Firebase!';}
   }catch(e){if(el){el.className='rb';el.textContent='Errore: '+e.message;}}
@@ -357,7 +379,7 @@ function hAl(){const ta=S.ta||{};const tots=atot(ta);const na=S.clubs.filter(c=>
   <thead><tr><th>Team</th>${BT.map(bt=>`<th>Vuole ${bt.sh}</th><th>Assegna ${bt.sh}</th>`).join('')}<th>Stato</th></tr></thead>
   <tbody>${na.map(c=>{const a=ta[c.id]||{s:0,d:0};const warn=BT.filter(bt=>(c.want?.[bt.id]||0)>0&&(a[bt.id]||0)<1).map(bt=>bt.sh);
     return`<tr><td><div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:${c.color}"></div>${c.name}</div></td>
-    ${BT.map(bt=>{const wv=c.want?.[bt.id]||0;const av=a[bt.id]||0;return`<td>${wv||'--'}</td><td><input type="number" min="0" class="an ${av>wv&&wv>0?'ov2':av>0&&av<=wv?'sat':''}" value="${av}" oninput="xUA('${c.id}','${bt.id}',this.value,this)" ${!wv?'disabled style="opacity:.3"':''}></td>`;}).join('')}
+    ${BT.map(bt=>{const wv=c.want?.[bt.id]||0;const av=a[bt.id]||0;return`<td>${wv||'--'}</td><td><input type="number" min="0" class="an ${av>wv&&wv>0?'ov2':av>0&&av<=wv?'sat':''}" value="${av}" onchange="xUA('${c.id}','${bt.id}',this.value,this)" onblur="xUA('${c.id}','${bt.id}',this.value,this)" ${!wv?'disabled style="opacity:.3"':''}></td>`;}).join('')}
     <td>${warn.length?`<span style="color:#D97706">! ${warn.join(',')}</span>`:`<span style="color:#059669">ok</span>`}</td></tr>`;}).join('')}</tbody></table></div>`:''}
   <button class="bok" onclick="xFA()" ${!S.ta||!na.length?'disabled':''}>Conferma e salva assegnazione</button>`;}
 
@@ -502,13 +524,13 @@ function xOC(date,sid,line){const day=DAYS.find(d=>d.date===date);const sl=SLOTS
 async function xSC(){const ids=[...document.querySelectorAll('[id^="eck-"]:checked')].map(el=>el.value);const{day,sl,line}=S.editCell;const s=JSON.parse(JSON.stringify(S.sched));s[day.date][sl.id][line]={ids};await sS(s);set({editCell:null});}
 async function xSCClear(){const{day,sl,line}=S.editCell;const s=JSON.parse(JSON.stringify(S.sched));s[day.date][sl.id][line]={ids:[]};await sS(s);set({editCell:null});}
 async function xSK(t,d){const k={...S.stk};k[t]=Math.max(0,(k[t]||0)+d);await sK(k);}
-function xNC(){set({editCId:'new',cf:{name:'',in:'2026-04-11',out:'2026-04-15',ci:S.clubs.length%PAL.length,want:{s:0,d:0},auto:false,sharable:false},showCF:true});}
-function xEC(id){const c=S.clubs.find(x=>x.id===id);const ci=PAL.indexOf(c.color);const cin=c.in||c.arrivalDate||'2026-04-11';const cout=c.out||c.departureDate||'2026-04-15';set({editCId:id,cf:{name:c.name,in:cin,out:cout,ci:ci>=0?ci:0,want:{s:0,d:0,...(c.want||{})},auto:c.auto||false,sharable:c.sharable||false},showCF:true});}
+function xNC(){set({editCId:'new',cf:{name:'',in:'2026-04-01',out:'2026-04-15',ci:S.clubs.length%PAL.length,want:{s:0,d:0},auto:false,sharable:false},showCF:true});}
+function xEC(id){const c=S.clubs.find(x=>x.id===id);const ci=PAL.indexOf(c.color);const cin=c.in||c.arrivalDate||'2026-04-01';const cout=c.out||c.departureDate||'2026-04-15';set({editCId:id,cf:{name:c.name,fullName:c.fullName||'',in:cin,out:cout,ci:ci>=0?ci:0,want:{s:0,d:0,...(c.want||{})},auto:c.auto||false,sharable:c.sharable||false},showCF:true});}
 function xW(t,d){const w={...S.cf.want};w[t]=Math.max(0,(w[t]||0)+d);S.cf={...S.cf,want:w};render();}
-async function xSv(){const f=S.cf;if(!f.name.trim())return;const arr=document.getElementById('cfa')?.value||f.in;const dep=document.getElementById('cfd')?.value||f.out;S.cf.in=arr;S.cf.out=dep;const isA=document.getElementById('cfa2')?.checked??f.auto;const isSh=!isA&&(document.getElementById('cfs')?.checked??f.sharable);const club={id:S.editCId==='new'?uid():S.editCId,name:f.name.trim(),in:arr,out:dep,color:PAL[f.ci>=0?f.ci:0],want:isA?{s:0,d:0}:{...f.want},fleet:S.editCId==='new'?{s:0,d:0}:(S.clubs.find(c=>c.id===S.editCId)?.fleet||{s:0,d:0}),auto:isA,sharable:isSh};const upd=S.editCId==='new'?[...S.clubs,club]:S.clubs.map(c=>c.id===S.editCId?club:c);await sC(upd);set({showCF:false,editCId:null});}
+async function xSv(){const f=S.cf;if(!f.name.trim())return;const arr=document.getElementById('cfa')?.value||f.in;const dep=document.getElementById('cfd')?.value||f.out;S.cf.in=arr;S.cf.out=dep;const isA=document.getElementById('cfa2')?.checked??f.auto;const isSh=!isA&&(document.getElementById('cfs')?.checked??f.sharable);const club={id:S.editCId==='new'?uid():S.editCId,name:f.name.trim(),fullName:(document.getElementById('cffl')?.value||f.fullName||'').trim(),in:arr,out:dep,color:PAL[f.ci>=0?f.ci:0],want:isA?{s:0,d:0}:{...f.want},fleet:S.editCId==='new'?{s:0,d:0}:(S.clubs.find(c=>c.id===S.editCId)?.fleet||{s:0,d:0}),auto:isA,sharable:isSh};const upd=S.editCId==='new'?[...S.clubs,club]:S.clubs.map(c=>c.id===S.editCId?club:c);await sC(upd);set({showCF:false,editCId:null});}
 async function xDC(id){if(!confirm('Eliminare?'))return;const ng=S.groups.map(g=>({...g,members:g.members.filter(m=>m!==id)})).filter(g=>g.members.length>0);S.groups=ng;await sG(ng);await sC(S.clubs.filter(c=>c.id!==id));}
 function xCA(){S.ta=calcAlloc(S.stk,S.clubs);render();}
-function xUA(cid,t,val,inp){if(!S.ta)return;const n=Math.max(0,parseInt(val)||0);S.ta[cid][t]=n;BT.forEach(bt=>{const u=Object.values(S.ta).reduce((a,v)=>a+(v[bt.id]||0),0);const av=S.stk[bt.id]||0;const pct=av>0?Math.min(100,u/av*100):0;const lb=document.getElementById(`al-${bt.id}`);const br=document.getElementById(`ab-${bt.id}`);if(lb)lb.textContent=`${u}/${av}`;if(br){br.style.width=pct+'%';br.style.background=u>av?'#DC2626':u===av&&av>0?'#D97706':bt.col;}if(inp){const cl=S.clubs.find(c=>c.id===cid);const w=cl?.want?.[t]||0;inp.className='an'+(n>w&&w>0?' ov2':n>0&&n<=w?' sat':'');}});}
+function xUA(cid,t,val,inp){if(!S.ta)return;const raw=String(val).trim();if(raw===''||raw==='-')return;const n=Math.max(0,parseInt(raw,10)||0);S.ta[cid][t]=n;BT.forEach(bt=>{const u=Object.values(S.ta).reduce((a,v)=>a+(v[bt.id]||0),0);const av=S.stk[bt.id]||0;const pct=av>0?Math.min(100,u/av*100):0;const lb=document.getElementById(`al-${bt.id}`);const br=document.getElementById(`ab-${bt.id}`);if(lb)lb.textContent=`${u}/${av}`;if(br){br.style.width=pct+'%';br.style.background=u>av?'#DC2626':u===av&&av>0?'#D97706':bt.col;}if(inp){const cl=S.clubs.find(c=>c.id===cid);const w=cl?.want?.[t]||0;inp.className='an'+(n>w&&w>0?' ov2':n>0&&n<=w?' sat':'');}});}
 async function xFA(){if(!S.ta)return;const upd=S.clubs.map(c=>({...c,fleet:{s:S.ta[c.id]?.s||0,d:S.ta[c.id]?.d||0}}));await sC(upd);alert('Assegnazione salvata!');}
 function xNewGroup(){set({showGM:true,editGIdx:'new',gmSelected:[]});}
 function xEditGroup(gi){const g=S.groups[gi];set({showGM:true,editGIdx:gi,gmSelected:[...(g?.members||[])]});}
@@ -521,6 +543,11 @@ async function xGR(){if(!confirm('Generare il programma? Sovrascrive tutti gli s
 // ── ECONOMIA ─────────────────────────────────────────────────────────
 // Get days for a specific service for a specific team
 // line/s/d default to actual presence days; assist/gym default to 0
+function getPrice(cid,key){
+  const tp=S.teamPrices&&S.teamPrices[cid];
+  if(tp&&tp[key]!==undefined&&tp[key]!==null)return tp[key];
+  return S.prices[key]||0;
+}
 function getSvcDays(c,key){
   const sd=S.serviceDays[c.id];
   if(sd&&sd[key]!==undefined&&sd[key]!==null)return sd[key];
@@ -536,11 +563,11 @@ function calcTotal(c){
   const dD=getSvcDays(c,'d');
   const dAssist=getSvcDays(c,'assist');
   const dGym=getSvcDays(c,'gym');
-  const lineCost=(p.line||0)*dLine;
-  const sCost=(p.s||0)*(c.fleet?.s||0)*dS;
-  const dCost=(p.d||0)*(c.fleet?.d||0)*dD;
-  const assistCost=(p.assist||0)*dAssist;
-  const gymCost=(p.gym||0)*dGym;
+  const lineCost=getPrice(c.id,'line')*dLine;
+  const sCost=getPrice(c.id,'s')*(c.fleet?.s||0)*dS;
+  const dCost=getPrice(c.id,'d')*(c.fleet?.d||0)*dD;
+  const assistCost=getPrice(c.id,'assist')*dAssist;
+  const gymCost=getPrice(c.id,'gym')*dGym;
   const total=lineCost+sCost+dCost+assistCost+gymCost;
   return{lineCost,sCost,dCost,assistCost,gymCost,total,dLine,dS,dD,dAssist,dGym};
 }
@@ -632,11 +659,11 @@ function hEC2(){
 
     // Servizi
     const services=[
-      {lbl:'Linea',      key:'line',  days:dLine,   upr:p.line||0,   qty:1,   cost:lineCost,  col:'#1D4ED8',always:true},
-      w.s>0?{lbl:'Singoli',key:'s',  days:dS,      upr:p.s||0,      qty:w.s, cost:sCost,     col:'#0891B2',always:true}:null,
-      w.d>0?{lbl:'Doppi',  key:'d',  days:dD,      upr:p.d||0,      qty:w.d, cost:dCost,     col:'#7C3AED',always:true}:null,
-      {lbl:'Assistenza', key:'assist',days:dAssist, upr:p.assist||0, qty:1,   cost:assistCost,col:'#059669',always:false},
-      {lbl:'Palestra',   key:'gym',  days:dGym,    upr:p.gym||0,    qty:1,   cost:gymCost,   col:'#D97706',always:false}
+      {lbl:'Linea',      key:'line',  days:dLine,   upr:getPrice(c.id,'line'),   globalUpr:p.line||0, qty:1,   cost:lineCost,  col:'#1D4ED8',always:true},
+      w.s>0?{lbl:'Singoli',key:'s',  days:dS,      upr:getPrice(c.id,'s'),      globalUpr:p.s||0, qty:w.s, cost:sCost,     col:'#0891B2',always:true}:null,
+      w.d>0?{lbl:'Doppi',  key:'d',  days:dD,      upr:getPrice(c.id,'d'),      globalUpr:p.d||0, qty:w.d, cost:dCost,     col:'#7C3AED',always:true}:null,
+      {lbl:'Assistenza', key:'assist',days:dAssist, upr:getPrice(c.id,'assist'), globalUpr:p.assist||0, qty:1,   cost:assistCost,col:'#059669',always:false},
+      {lbl:'Palestra',   key:'gym',  days:dGym,    upr:getPrice(c.id,'gym'),    globalUpr:p.gym||0, qty:1,   cost:gymCost,   col:'#D97706',always:false}
     ].filter(Boolean);
 
     html+=`<div style="padding:4px 16px">`;
@@ -649,7 +676,14 @@ function hEC2(){
         <div style="width:8px;height:8px;border-radius:50%;background:${sv.col};flex-shrink:0;opacity:${isActive?1:.25}"></div>
         <div style="flex:1">
           <div style="font-size:13px;font-weight:600;color:${isActive?'#374151':'#CBD5E1'}">${sv.lbl}${qtyLabel}</div>
-          <div style="font-size:10px;color:#94A3B8">€ ${fmt(sv.upr)}${sv.qty>1?' x'+sv.qty:''} x gg</div>
+          <div style="display:flex;align-items:center;gap:3px;margin-top:2px">
+              <span style="font-size:10px;color:#94A3B8">€</span>
+              <input type="number" min="0" step="0.01" value="${sv.upr}"
+                onchange="xSetTeamPrice('${c.id}','${sv.key}',this.value)"
+                style="width:56px;border:1px solid ${sv.upr!==sv.globalUpr?sv.col:'#E2E8F0'};border-radius:6px;padding:2px 5px;font-size:11px;font-weight:700;text-align:right;font-family:monospace;outline:none;color:${sv.upr!==sv.globalUpr?sv.col:'#64748B'}">
+              ${sv.upr!==sv.globalUpr?'<button onclick="xResetTeamPrice(\''+c.id+'\',\''+sv.key+'\')" style="background:none;border:none;color:'+sv.col+';font-size:10px;cursor:pointer;padding:0;line-height:1">↺</button>':''}
+              <span style="font-size:10px;color:#94A3B8">${sv.qty>1?'x'+sv.qty+' ':''}x gg</span>
+            </div>
         </div>
         <div style="display:flex;align-items:center;gap:2px;background:#F1F5F9;border-radius:8px;padding:3px 6px;border:1.5px solid ${isOvr?sv.col:'transparent'}">
           <button onclick="xAdjSvcDays('${c.id}','${sv.key}',-1,${defDays})" style="background:none;border:none;color:#64748B;font-size:15px;font-weight:700;cursor:pointer;padding:0 3px;line-height:1">−</button>
@@ -693,6 +727,17 @@ function hEC2(){
   return html;
 }
 
+async function xSetTeamPrice(cid,key,val){
+  const tp={...S.teamPrices};
+  if(!tp[cid])tp[cid]={};
+  tp[cid][key]=parseFloat(val)||0;
+  await sTP(tp);
+}
+async function xResetTeamPrice(cid,key){
+  const tp={...S.teamPrices};
+  if(tp[cid]){delete tp[cid][key];if(!Object.keys(tp[cid]).length)delete tp[cid];}
+  await sTP(tp);
+}
 async function xAdjSvcDays(cid,key,delta,defaultDays){
   const sd={...S.serviceDays};
   if(!sd[cid])sd[cid]={};
@@ -764,13 +809,16 @@ function genDocPDF(cid,tipo){
       let y=42;
       doc.setFillColor(238,242,248);doc.rect(14,y-3,W-28,18,'F');
       doc.setTextColor(...nv);doc.setFont('helvetica','bold');doc.setFontSize(12);
-      doc.text(c.name.toUpperCase(),16,y+4);
+      const displayName=c.fullName?c.fullName:c.name.toUpperCase();
+      doc.text(displayName.toUpperCase(),16,y+4);
+      if(c.fullName){doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...nv);doc.text('('+c.name+')',16,y+10);}
       doc.setTextColor(100,116,139);doc.setFont('helvetica','normal');doc.setFontSize(9);
       const cin=c.in||c.arrivalDate;const cout=c.out||c.departureDate;
       const aD=DAYS.find(x=>x.date===cin);const dD=DAYS.find(x=>x.date===cout);
-      doc.text('Presence: '+(aD?aD.label:cin||'?')+' \u2192 '+(dD?dD.label:cout||'?')+'   |   '+actual+' days',16,y+10);
-      doc.text('Document date: '+new Date().toLocaleDateString('en-GB'),16,y+16);
-      y+=24;
+      const nameOffset=c.fullName?6:0;
+      doc.text('Presence: '+(aD?aD.label:cin||'?')+' \u2192 '+(dD?dD.label:cout||'?')+'   |   '+actual+' days',16,y+10+nameOffset);
+      doc.text('Document date: '+new Date().toLocaleDateString('en-GB'),16,y+16+nameOffset);
+      y+=24+(c.fullName?6:0);
 
       // ── Services table ───────────────────────────────────────────
       doc.autoTable({
@@ -890,7 +938,7 @@ function genDocXLSX(cid,tipo){
       ['Beach Sprint Training Camp — Filippi Cup 2026'],
       [docLabel],
       [],
-      ['Team:',c.name,'','Dates:',(aD?aD.label:cin||'?')+' → '+(dD?dD.label:cout||'?')],
+      ['Team:',c.fullName?c.fullName+' ('+c.name+')':c.name,'','Dates:',(aD?aD.label:cin||'?')+' → '+(dD?dD.label:cout||'?')],
       ['Date:',new Date().toLocaleDateString('en-GB')],
       [],
       ['Code','Service Description','Unit','Unit Price (€)','Days/Qty','Qty','Total (€)'],
