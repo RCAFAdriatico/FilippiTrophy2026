@@ -614,7 +614,7 @@ function hEC2(){
   html+=`<div class="card" style="margin-bottom:16px">
     <div class="chd"><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:#0F172A">TARIFFE GLOBALI (default)</span></div>
     <div style="padding:16px;display:flex;flex-direction:column;gap:10px">`;
-  [{k:'line',lbl:'Linea/giorno',col:'#1D4ED8'},{k:'s',lbl:'1x/giorno',col:'#0891B2'},{k:'d',lbl:'2x/giorno',col:'#7C3AED'},{k:'assist',lbl:'Assistenza/giorno',col:'#059669'},{k:'gym',lbl:'Palestra/giorno',col:'#D97706'}].forEach(function(item){
+  [{k:'line',lbl:'Linea/giorno',col:'#1D4ED8'},{k:'s',lbl:'1x/giorno',col:'#0891B2'},{k:'d',lbl:'2x/giorno',col:'#7C3AED'},{k:'assist',lbl:'Assistenza/giorno',col:'#059669'},{k:'gym',lbl:'Palestra/ora',col:'#D97706'}].forEach(function(item){
     html+=`<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:10px;background:${rg(item.col,.06)};border:1.5px solid ${rg(item.col,.2)}">
       <div style="flex:1;font-weight:700;font-size:13px;color:${item.col}">${item.lbl}</div>
       <span style="font-size:13px;color:#64748B">€</span>
@@ -673,7 +673,7 @@ function hEC2(){
     html+=`<div style="padding:4px 16px">`;
     [{lbl:'Linea',key:'line',days:ct.dLine,upr:getPrice(c.id,'line'),globalUpr:p.line||0,col:'#1D4ED8',cost:ct.lineCost},
      {lbl:'Assistenza',key:'assist',days:ct.dAssist,upr:getPrice(c.id,'assist'),globalUpr:p.assist||0,col:'#059669',cost:ct.assistCost},
-     {lbl:'Palestra',key:'gym',days:ct.dGym,upr:getPrice(c.id,'gym'),globalUpr:p.gym||0,col:'#D97706',cost:ct.gymCost}
+     {lbl:'Palestra',key:'gym',days:ct.dGym,upr:getPrice(c.id,'gym'),globalUpr:p.gym||0,col:'#D97706',cost:ct.gymCost,unit:'ore'}
     ].forEach(function(sv){
       const isActive=sv.days>0;
       const defDays=sv.key==='line'?actual:0;
@@ -695,7 +695,7 @@ function hEC2(){
           <button onclick="xAdjSvcDays('${c.id}','${sv.key}',-1,${defDays})" style="background:none;border:none;color:#64748B;font-size:14px;font-weight:700;cursor:pointer;padding:0 2px;line-height:1">−</button>
           <span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;color:${isOvr?sv.col:'#374151'};min-width:18px;text-align:center">${sv.days}</span>
           <button onclick="xAdjSvcDays('${c.id}','${sv.key}',1,${defDays})" style="background:none;border:none;color:#64748B;font-size:14px;font-weight:700;cursor:pointer;padding:0 2px;line-height:1">+</button>
-          <span style="font-size:10px;color:#94A3B8">gg</span>
+          <span style="font-size:10px;color:#94A3B8">${sv.key==='gym'?'ore':'gg'}</span>
           ${isOvr?`<button onclick="xResetSvcDays('${c.id}','${sv.key}')" style="background:none;border:none;color:${sv.col};font-size:10px;cursor:pointer;padding:0 0 0 2px">↺</button>`:''}
         </div>
         <div style="font-size:13px;font-weight:800;color:${isActive?sv.col:'#E2E8F0'};min-width:62px;text-align:right">${isActive?'€ '+fmt(sv.cost):'--'}</div>
@@ -861,7 +861,7 @@ function prevData(cid){
     if(w.d>0)ar('S3','Double / 2x Boat use','boat/day',getPrice(cid,'d'),ct.dD,w.d,ct.dCost,'Not exclusive use; included oars');
   }
   if(ct.dAssist>0)ar('S5','Motorboat assistance (mandatory)','day/shared',getPrice(cid,'assist'),ct.dAssist,'shared',ct.assistCost,'Cost shared among participating teams; includes 1 motorboat + 2 operators');
-  if(ct.dGym>0)ar('S6/7','Indoor training / Exclusive gym use','day or hour',getPrice(cid,'gym'),ct.dGym,'--',ct.gymCost,'6 ergs; covered tent / 1.5-hour sessions; booking required');
+  if(ct.dGym>0)ar('S6/7','Indoor training / Exclusive gym use','team/hour',getPrice(cid,'gym'),ct.dGym,'--',ct.gymCost,'6 ergs; covered tent / 1.5-hour sessions; booking required');
   return{c,ct,rows,actual,w};
 }
 
