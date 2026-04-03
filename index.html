@@ -125,18 +125,17 @@ input,select{font-family:'DM Sans',sans-serif}
 <div id="app"></div>
 <script>
 // ── STORAGE: Firebase primary, localStorage fallback ─────────────────
+// Firebase-only storage — no localStorage to avoid conflicts
 const ST={
   async get(k){
     try{
       const snap=await FDB.ref('ft26/'+k).once('value');
       if(snap.exists()){const v=snap.val();return{value:typeof v==='string'?v:JSON.stringify(v)};}
-    }catch(e){console.warn('FB get',e);}
-    try{const v=localStorage.getItem(k);if(v)return{value:v};}catch{}
+    }catch(e){console.warn('FB get',k,e);}
     return null;
   },
   async set(k,v){
-    try{await FDB.ref('ft26/'+k).set(v);}catch(e){console.warn('FB set',e);}
-    try{localStorage.setItem(k,v);}catch{}
+    try{await FDB.ref('ft26/'+k).set(v);}catch(e){console.warn('FB set',k,e);alert('Errore salvataggio Firebase: '+e.message);}
   }
 };
 
@@ -195,34 +194,38 @@ function hydS(sv){const s=mkS();if(!sv)return s;DAYS.forEach(d=>SLOTS.forEach(sl
 function mgC(c){if(c.arrivalDate&&!c.in)c.in=c.arrivalDate;if(c.departureDate&&!c.out)c.out=c.departureDate;return c;}
 
 const K='ft26l';
-let S={clubs:[],stk:{s:5,d:5},sched:mkS(),groups:[],prices:{line:0,s:0,d:0,assist:0,gym:0},payments:{},serviceDays:{},teamPrices:{},tab:'grid',admin:false,loading:true,showLogin:false,pwd:'',pwdErr:false,editCell:null,showCF:false,editCId:null,cf:{name:'',fullName:'',in:'2026-04-01',out:'2026-04-15',ci:0,want:{s:0,d:0},auto:false,sharable:false},sec:'stk',day:0,selClub:null,pdfBusy:false,ta:null,showGM:false,editGIdx:null,gmSelected:[]};
+let S={clubs:[],stk:{s:5,d:5},sched:mkS(),groups:[],prices:{line:0,s:0,d:0,assist:0,gym:0},payments:{},serviceDays:{},teamPrices:{},serviceRows:{},tab:'grid',admin:false,loading:true,showLogin:false,pwd:'',pwdErr:false,editCell:null,showCF:false,editCId:null,cf:{name:'',fullName:'',in:'2026-04-01',out:'2026-04-15',ci:0,want:{s:0,d:0},auto:false,sharable:false},sec:'stk',day:0,selClub:null,pdfBusy:false,ta:null,showGM:false,editGIdx:null,gmSelected:[]};
 function set(p){S={...S,...p};render();}
 
 async function load(){
-  let clubs=null;
-  for(const k of[K+'-c','ft26k-c','ft26j-c','ft26i-c']){try{const r=await ST.get(k);if(r){clubs=JSON.parse(r.value).map(mgC);break;}}catch{}}
-  if(clubs)S.clubs=clubs;
-  try{const r=await ST.get(K+'-s');if(r)S.sched=hydS(JSON.parse(r.value));}catch{}
-  try{const r=await ST.get(K+'-k');if(r)S.stk=JSON.parse(r.value);}catch{}
-  try{const r=await ST.get(K+'-g');if(r)S.groups=JSON.parse(r.value);}catch{}
-  try{const r=await ST.get(K+'-p');if(r)S.prices=JSON.parse(r.value);}catch{}
-  try{const r=await ST.get(K+'-m');if(r)S.payments=JSON.parse(r.value);}catch{}
-  try{const r=await ST.get(K+'-sd');if(r)S.serviceDays=JSON.parse(r.value);}catch{}
-  try{const r=await ST.get(K+'-tp');if(r)S.teamPrices=JSON.parse(r.value);}catch{}
-  S.loading=false;S.selClub=S.clubs[0]?.id||null;render();
-  // Real-time listeners — wait 600ms to avoid overwriting initial load
-  let _fbReady=false;setTimeout(()=>{_fbReady=true;},600);
-  try{
-    FDB.ref('ft26/'+K+'-c').on('value',snap=>{if(!_fbReady||!snap.exists())return;const clubs=JSON.parse(snap.val()).map(mgC);S.clubs=clubs;if(!S.selClub&&clubs.length)S.selClub=clubs[0].id;render();});
-    FDB.ref('ft26/'+K+'-s').on('value',snap=>{if(!_fbReady||!snap.exists())return;S.sched=hydS(JSON.parse(snap.val()));render();});
-    FDB.ref('ft26/'+K+'-k').on('value',snap=>{if(!_fbReady||!snap.exists())return;S.stk=JSON.parse(snap.val());render();});
-    FDB.ref('ft26/'+K+'-g').on('value',snap=>{if(!_fbReady||!snap.exists())return;S.groups=JSON.parse(snap.val());render();});
-    FDB.ref('ft26/'+K+'-p').on('value',snap=>{if(!_fbReady||!snap.exists())return;S.prices=JSON.parse(snap.val());render();});
-    FDB.ref('ft26/'+K+'-m').on('value',snap=>{if(!_fbReady||!snap.exists())return;S.payments=JSON.parse(snap.val());render();});
-    FDB.ref('ft26/'+K+'-sd').on('value',snap=>{if(!_fbReady||!snap.exists())return;S.serviceDays=JSON.parse(snap.val());render();});
-    FDB.ref('ft26/'+K+'-tp').on('value',snap=>{if(!_fbReady||!snap.exists())return;S.teamPrices=JSON.parse(snap.val());render();});
-    console.log('Firebase listeners attivi');
-  }catch(e){console.warn('Listener error',e);}
+  // Firebase is the single source of truth — no localStorage
+  const app=document.getElementById('app');
+  app.innerHTML='<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#94A3B8"><div style="font-size:14px;font-family:DM Sans,sans-serif">Connessione Firebase...</div></div>';
+
+  const KEYS=[
+    {ref:K+'-c', parse:function(v){return JSON.parse(v).map(mgC);}, apply:function(d){S.clubs=d;if(!S.selClub&&d.length)S.selClub=d[0].id;}},
+    {ref:K+'-s', parse:function(v){return hydS(JSON.parse(v));},    apply:function(d){S.sched=d;}},
+    {ref:K+'-k', parse:function(v){return JSON.parse(v);},          apply:function(d){S.stk=d;}},
+    {ref:K+'-g', parse:function(v){return JSON.parse(v);},          apply:function(d){S.groups=d;}},
+    {ref:K+'-p', parse:function(v){return JSON.parse(v);},          apply:function(d){S.prices=d;}},
+    {ref:K+'-m', parse:function(v){return JSON.parse(v);},          apply:function(d){S.payments=d;}},
+    {ref:K+'-sd',parse:function(v){return JSON.parse(v);},          apply:function(d){S.serviceDays=d;}},
+    {ref:K+'-tp',parse:function(v){return JSON.parse(v);},          apply:function(d){S.teamPrices=d;}},
+    {ref:K+'-sr',parse:function(v){return JSON.parse(v);},          apply:function(d){S.serviceRows=d;}},
+  ];
+  var loaded=0;
+  KEYS.forEach(function(k){
+    FDB.ref('ft26/'+k.ref).on('value',function(snap){
+      try{if(snap.exists())k.apply(k.parse(snap.val()));}catch(e){console.warn('Parse error',k.ref,e);}
+      if(!k._loaded){k._loaded=true;loaded++;if(loaded>=KEYS.length){S.loading=false;render();}}
+      else if(!S.loading){render();}
+    },function(err){
+      console.warn('FB listener error',k.ref,err);
+      if(!k._loaded){k._loaded=true;loaded++;if(loaded>=KEYS.length){S.loading=false;render();}}
+    });
+  });
+  // Failsafe: show UI after 5s even if Firebase is slow
+  setTimeout(function(){if(S.loading){S.loading=false;render();}},5000);
 }
 const sC=async c=>{S.clubs=c;render();await ST.set(K+'-c',JSON.stringify(c));};
 const sS=async s=>{S.sched=s;render();await ST.set(K+'-s',JSON.stringify(s));};
@@ -232,6 +235,7 @@ const sP=async p=>{S.prices=p;render();await ST.set(K+'-p',JSON.stringify(p));};
 const sM=async m=>{S.payments=m;render();await ST.set(K+'-m',JSON.stringify(m));};
 const sSD=async s=>{S.serviceDays=s;render();await ST.set(K+'-sd',JSON.stringify(s));};
 const sTP=async t=>{S.teamPrices=t;render();await ST.set(K+'-tp',JSON.stringify(t));};
+const sSR=async r=>{S.serviceRows=r;render();await ST.set(K+'-sr',JSON.stringify(r));};
 async function clr(){if(!confirm('Cancellare tutti i dati?'))return;S.clubs=[];S.sched=mkS();S.stk={s:5,d:5};S.groups=[];S.ta=null;S.selClub=null;await sC([]);await sS(mkS());await sK({s:5,d:5});await sG([]);set({tab:'admin',sec:'stk'});}
 
 // ── FIREBASE SYNC MANUAL ────────────────────────────────────────────
@@ -247,6 +251,7 @@ async function xFBPush(){
     await FDB.ref('ft26/'+K+'-m').set(JSON.stringify(S.payments));
     await FDB.ref('ft26/'+K+'-sd').set(JSON.stringify(S.serviceDays));
     await FDB.ref('ft26/'+K+'-tp').set(JSON.stringify(S.teamPrices));
+    await FDB.ref('ft26/'+K+'-sd').set(JSON.stringify(S.serviceRows));
     if(el){el.className='gb';el.textContent='Dati caricati su Firebase! Gli altri dispositivi si aggiorneranno automaticamente.';}
   }catch(e){if(el){el.className='rb';el.textContent='Errore: '+e.message;}}
 }
@@ -262,6 +267,7 @@ async function xFBPull(){
     const rm=await FDB.ref('ft26/'+K+'-m').once('value');
     const rsd=await FDB.ref('ft26/'+K+'-sd').once('value');
     const rtp=await FDB.ref('ft26/'+K+'-tp').once('value');
+    const rsr=await FDB.ref('ft26/'+K+'-sr').once('value');
     if(rc.exists())S.clubs=JSON.parse(rc.val()).map(mgC);
     if(rs.exists())S.sched=hydS(JSON.parse(rs.val()));
     if(rk.exists())S.stk=JSON.parse(rk.val());
@@ -270,6 +276,7 @@ async function xFBPull(){
     if(rm.exists())S.payments=JSON.parse(rm.val());
     if(rsd.exists())S.serviceDays=JSON.parse(rsd.val());
     if(rtp.exists())S.teamPrices=JSON.parse(rtp.val());
+    if(rsr.exists())S.serviceRows=JSON.parse(rsr.val());
     render();
     if(el){el.className='gb';el.textContent='Dati scaricati da Firebase!';}
   }catch(e){if(el){el.className='rb';el.textContent='Errore: '+e.message;}}
@@ -334,16 +341,31 @@ function hAdmin(){
 
 function hFB(){
   return`<div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:#0F172A;margin-bottom:6px">SYNC FIREBASE</div>
-  <p style="font-size:13px;color:#64748B;margin-bottom:16px">Usa questi pulsanti per sincronizzare i dati tra dispositivi.</p>
-  <div id="fb-status" class="gb" style="margin-bottom:16px">Pronto.</div>
-  <button onclick="xFBPush()" style="background:#1D4ED8;color:white;border:none;border-radius:14px;padding:14px 20px;font-size:15px;font-weight:700;width:100%;margin-bottom:8px;cursor:pointer">
-    Carica i miei dati su Firebase
+  <div class="gb" style="margin-bottom:16px">
+    <strong>Sync automatico attivo.</strong> Tutti i dispositivi si aggiornano in tempo reale — non serve fare nulla manualmente.
+  </div>
+  <div class="ib" style="margin-bottom:16px">
+    I dati vengono salvati su Firebase ad ogni modifica. Se apri l'app su un altro dispositivo, vedi subito i dati aggiornati.
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="chd"><span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700">Stato connessione</span></div>
+    <div style="padding:14px 16px;display:flex;align-items:center;gap:10px">
+      <div id="fb-dot" style="width:10px;height:10px;border-radius:50%;background:#059669;flex-shrink:0"></div>
+      <span id="fb-status-txt" style="font-size:13px;color:#374151">Connesso a Firebase</span>
+    </div>
+  </div>
+  <button onclick="clr()" style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;border-radius:12px;padding:11px 20px;font-size:14px;font-weight:600;width:100%;cursor:pointer">
+    Cancella tutti i dati
   </button>
-  <p style="font-size:12px;color:#94A3B8;text-align:center;margin-bottom:20px">Premi sul dispositivo che ha i dati corretti. Gli altri si aggiornano automaticamente.</p>
-  <button onclick="xFBPull()" style="background:white;color:#1D4ED8;border:1.5px solid #1D4ED8;border-radius:14px;padding:13px 20px;font-size:15px;font-weight:700;width:100%;cursor:pointer">
-    Scarica dati da Firebase
-  </button>
-  <p style="font-size:12px;color:#94A3B8;text-align:center;margin-top:8px">Forza il caricamento dei dati da Firebase su questo dispositivo.</p>`;}
+  <p style="font-size:12px;color:#94A3B8;text-align:center;margin-top:8px">Questa operazione è irreversibile.</p>
+  <script>
+    FDB.ref('.info/connected').on('value',function(snap){
+      const el=document.getElementById('fb-dot');const tx=document.getElementById('fb-status-txt');
+      if(!el||!tx)return;
+      if(snap.val()){el.style.background='#059669';tx.textContent='Connesso a Firebase — sync attivo';}
+      else{el.style.background='#DC2626';tx.textContent='Disconnesso — le modifiche saranno sincronizzate alla riconnessione';}
+    });
+  <\/script>`;}
 
 function hStk(){return`<div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:#0F172A;margin-bottom:16px">PARCO BARCHE</div>
   ${BT.map(bt=>{const used=S.clubs.filter(c=>!c.auto).reduce((a,c)=>a+(c.fleet?.[bt.id]||0),0);const av=S.stk[bt.id]||0;const pct=av>0?Math.min(100,used/av*100):0;const ov=used>av;const fl=used===av&&av>0;
@@ -564,12 +586,16 @@ function calcTotal(c){
   const dAssist=getSvcDays(c,'assist');
   const dGym=getSvcDays(c,'gym');
   const lineCost=getPrice(c.id,'line')*dLine;
-  const sCost=getPrice(c.id,'s')*(c.fleet?.s||0)*dS;
-  const dCost=getPrice(c.id,'d')*(c.fleet?.d||0)*dD;
   const assistCost=getPrice(c.id,'assist')*dAssist;
   const gymCost=getPrice(c.id,'gym')*dGym;
-  const total=lineCost+sCost+dCost+assistCost+gymCost;
-  return{lineCost,sCost,dCost,assistCost,gymCost,total,dLine,dS,dD,dAssist,dGym};
+  // boat rows: flexible multi-row
+  const boatRows=(S.serviceRows[c.id]||[]);
+  const boatCost=boatRows.reduce((a,r)=>a+(r.upr||0)*(r.qty||0)*(r.days||0),0);
+  // legacy sCost/dCost from fleet for backward compat (if no boatRows yet)
+  const sCost=boatRows.length?0:getPrice(c.id,'s')*(c.fleet?.s||0)*dS;
+  const dCost=boatRows.length?0:getPrice(c.id,'d')*(c.fleet?.d||0)*dD;
+  const total=lineCost+sCost+dCost+boatCost+assistCost+gymCost;
+  return{lineCost,sCost,dCost,boatCost,boatRows,assistCost,gymCost,total,dLine,dS,dD,dAssist,dGym};
 }
 function fmt(n){return n.toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
 
@@ -582,44 +608,30 @@ function hEC2(){
 
   let html='';
   html+=`<div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:#0F172A;margin-bottom:6px">ECONOMIA</div>`;
-  html+=`<p style="font-size:13px;color:#64748B;margin-bottom:20px">Tariffe giornaliere. I giorni per ogni voce sono modificabili.</p>`;
+  html+=`<p style="font-size:13px;color:#64748B;margin-bottom:20px">Tariffe e giorni modificabili per ogni club. Aggiungi righe barche personalizzate.</p>`;
 
-  // Tariffe
+  // Tariffe globali
   html+=`<div class="card" style="margin-bottom:16px">
-    <div class="chd"><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:#0F172A">TARIFFE GIORNALIERE</span></div>
+    <div class="chd"><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:#0F172A">TARIFFE GLOBALI (default)</span></div>
     <div style="padding:16px;display:flex;flex-direction:column;gap:10px">`;
-  [
-    {k:'line',lbl:'Costo linea/giorno',col:'#1D4ED8'},
-    {k:'s',lbl:'Costo 1x/giorno',col:'#0891B2'},
-    {k:'d',lbl:'Costo 2x/giorno',col:'#7C3AED'},
-    {k:'assist',lbl:'Costo assistenza/giorno',col:'#059669'},
-    {k:'gym',lbl:'Costo palestra/giorno',col:'#D97706'}
-  ].forEach(function(item){
-    html+=`<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;background:${rg(item.col,.06)};border:1.5px solid ${rg(item.col,.2)}">
-      <div style="flex:1;font-weight:700;font-size:14px;color:${item.col}">${item.lbl}</div>
-      <div style="display:flex;align-items:center;gap:6px">
-        <span style="font-size:14px;color:#64748B">€</span>
-        <input type="number" min="0" step="0.01" value="${p[item.k]||0}"
-          onchange="S.prices['${item.k}']=parseFloat(this.value)||0"
-          style="width:80px;border:1.5px solid ${rg(item.col,.3)};border-radius:8px;padding:6px 8px;font-size:15px;font-weight:700;text-align:right;font-family:'Barlow Condensed',sans-serif;outline:none;color:${item.col}">
-      </div>
+  [{k:'line',lbl:'Linea/giorno',col:'#1D4ED8'},{k:'s',lbl:'1x/giorno',col:'#0891B2'},{k:'d',lbl:'2x/giorno',col:'#7C3AED'},{k:'assist',lbl:'Assistenza/giorno',col:'#059669'},{k:'gym',lbl:'Palestra/giorno',col:'#D97706'}].forEach(function(item){
+    html+=`<div style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:10px;background:${rg(item.col,.06)};border:1.5px solid ${rg(item.col,.2)}">
+      <div style="flex:1;font-weight:700;font-size:13px;color:${item.col}">${item.lbl}</div>
+      <span style="font-size:13px;color:#64748B">€</span>
+      <input type="number" min="0" step="0.01" value="${p[item.k]||0}" onchange="S.prices['${item.k}']=parseFloat(this.value)||0"
+        style="width:75px;border:1.5px solid ${rg(item.col,.3)};border-radius:8px;padding:5px 8px;font-size:14px;font-weight:700;text-align:right;font-family:'Barlow Condensed',sans-serif;outline:none;color:${item.col}">
     </div>`;
   });
   html+=`</div>
-    <div style="padding:0 16px 16px">
-      <button onclick="xSavePrices()" style="background:#1D4ED8;color:white;border:none;border-radius:12px;padding:10px 22px;font-size:14px;font-weight:700;cursor:pointer;width:100%">Salva tariffe</button>
-    </div>
+    <div style="padding:0 16px 14px"><button onclick="xSavePrices()" style="background:#1D4ED8;color:white;border:none;border-radius:10px;padding:9px 20px;font-size:13px;font-weight:700;cursor:pointer;width:100%">Salva tariffe globali</button></div>
   </div>`;
 
-  // Riepilogo totali
+  // Totali
   html+=`<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">`;
-  [{lbl:'Da incassare',val:grandTotal,col:'#0F172A',bg:'#F8FAFC'},
-   {lbl:'Ricevuto',val:grandPaid,col:'#059669',bg:'#F0FDF4'},
-   {lbl:'Mancante',val:grandDue,col:grandDue>0.01?'#DC2626':'#059669',bg:grandDue>0.01?'#FEF2F2':'#F0FDF4'}
-  ].forEach(function(s){
-    html+=`<div style="flex:1;min-width:130px;padding:14px 16px;border-radius:14px;background:${s.bg};border:1.5px solid #E2E8F0;text-align:center">
-      <div style="font-size:11px;color:#94A3B8;margin-bottom:4px">${s.lbl}</div>
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;color:${s.col}">€ ${fmt(s.val)}</div>
+  [{lbl:'Da incassare',val:grandTotal,col:'#0F172A',bg:'#F8FAFC'},{lbl:'Ricevuto',val:grandPaid,col:'#059669',bg:'#F0FDF4'},{lbl:'Mancante',val:grandDue,col:grandDue>0.01?'#DC2626':'#059669',bg:grandDue>0.01?'#FEF2F2':'#F0FDF4'}].forEach(function(s){
+    html+=`<div style="flex:1;min-width:130px;padding:12px 14px;border-radius:12px;background:${s.bg};border:1.5px solid #E2E8F0;text-align:center">
+      <div style="font-size:11px;color:#94A3B8;margin-bottom:3px">${s.lbl}</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:${s.col}">€ ${fmt(s.val)}</div>
     </div>`;
   });
   html+=`</div>`;
@@ -627,81 +639,120 @@ function hEC2(){
   // Card per team
   html+=`<div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:#0F172A;margin-bottom:12px">DETTAGLIO PER TEAM</div>`;
   if(!na.length){html+=`<div class="es">Nessun team.</div>`;}
+
   na.forEach(function(c){
     const ct=calcTotal(c);
-    const lineCost=ct.lineCost,sCost=ct.sCost,dCost=ct.dCost,assistCost=ct.assistCost,gymCost=ct.gymCost,total=ct.total;
-    const dLine=ct.dLine,dS=ct.dS,dD=ct.dD,dAssist=ct.dAssist,dGym=ct.dGym;
     const paid=S.payments[c.id]||0;
-    const due=total-paid;
-    const pagato=due<=0.01;
-    const parz=paid>0&&due>0.01;
+    const due=ct.total-paid;
+    const pagato=due<=0.01;const parz=paid>0&&due>0.01;
     const actual=daysActual(c);
     const w=cBW(c);
+    const cin=c.in||c.arrivalDate;const cout=c.out||c.departureDate;
+    const aD=DAYS.find(x=>x.date===cin);const dD=DAYS.find(x=>x.date===cout);
 
-    const badgeHtml=pagato
-      ?`<span style="background:#F0FDF4;color:#15803D;border:1px solid #86EFAC;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700">Saldato</span>`
-      :parz
-        ?`<span style="background:#FFFBEB;color:#92400E;border:1px solid #FCD34D;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700">Parziale</span>`
-        :`<span style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700">Non pagato</span>`;
+    const badge=pagato
+      ?`<span style="background:#F0FDF4;color:#15803D;border:1px solid #86EFAC;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">Saldato</span>`
+      :parz?`<span style="background:#FFFBEB;color:#92400E;border:1px solid #FCD34D;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">Parziale</span>`
+      :`<span style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700">Non pagato</span>`;
 
     html+=`<div class="card" style="margin-bottom:12px;border-left:4px solid ${c.color}">`;
+
     // Header
-    html+=`<div style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #F1F5F9">
+    html+=`<div style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #F1F5F9">
       <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:12px;height:12px;border-radius:50%;background:${c.color}"></div>
+        <div style="width:11px;height:11px;border-radius:50%;background:${c.color}"></div>
         <div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:${c.color}">${c.name}</div>
-          <div style="font-size:11px;color:#94A3B8">${actual} giorni presenti · ${c.auto?'autonomo':bwStr(w)||'no barche'}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;color:${c.color}">${c.name}</div>
+          <div style="font-size:11px;color:#94A3B8">${aD?aD.label:cin||'?'} → ${dD?dD.label:cout||'?'} · ${actual} gg · ${c.auto?'autonomo':bwStr(w)||'no barche'}</div>
         </div>
       </div>
-      <div>${badgeHtml}</div>
+      <div>${badge}</div>
     </div>`;
 
-    // Servizi
-    const services=[
-      {lbl:'Linea',      key:'line',  days:dLine,   upr:getPrice(c.id,'line'),   globalUpr:p.line||0, qty:1,   cost:lineCost,  col:'#1D4ED8',always:true},
-      w.s>0?{lbl:'Singoli',key:'s',  days:dS,      upr:getPrice(c.id,'s'),      globalUpr:p.s||0, qty:w.s, cost:sCost,     col:'#0891B2',always:true}:null,
-      w.d>0?{lbl:'Doppi',  key:'d',  days:dD,      upr:getPrice(c.id,'d'),      globalUpr:p.d||0, qty:w.d, cost:dCost,     col:'#7C3AED',always:true}:null,
-      {lbl:'Assistenza', key:'assist',days:dAssist, upr:getPrice(c.id,'assist'), globalUpr:p.assist||0, qty:1,   cost:assistCost,col:'#059669',always:false},
-      {lbl:'Palestra',   key:'gym',  days:dGym,    upr:getPrice(c.id,'gym'),    globalUpr:p.gym||0, qty:1,   cost:gymCost,   col:'#D97706',always:false}
-    ].filter(Boolean);
-
+    // ── Servizi fissi (linea, assist, gym) con giorni +/- e prezzo editabile
     html+=`<div style="padding:4px 16px">`;
-    services.forEach(function(sv){
+    [{lbl:'Linea',key:'line',days:ct.dLine,upr:getPrice(c.id,'line'),globalUpr:p.line||0,col:'#1D4ED8',cost:ct.lineCost},
+     {lbl:'Assistenza',key:'assist',days:ct.dAssist,upr:getPrice(c.id,'assist'),globalUpr:p.assist||0,col:'#059669',cost:ct.assistCost},
+     {lbl:'Palestra',key:'gym',days:ct.dGym,upr:getPrice(c.id,'gym'),globalUpr:p.gym||0,col:'#D97706',cost:ct.gymCost}
+    ].forEach(function(sv){
       const isActive=sv.days>0;
-      const defDays=sv.always?actual:0;
-      const isOvr=S.serviceDays[c.id]&&S.serviceDays[c.id][sv.key]!==undefined&&S.serviceDays[c.id][sv.key]!==null;
-      const qtyLabel=sv.qty>1?' (x'+sv.qty+')':'';
-      html+=`<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #F8FAFC">
+      const defDays=sv.key==='line'?actual:0;
+      const isOvr=S.serviceDays[c.id]&&S.serviceDays[c.id][sv.key]!==undefined;
+      const isPriceOvr=sv.upr!==sv.globalUpr;
+      html+=`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #F8FAFC">
         <div style="width:8px;height:8px;border-radius:50%;background:${sv.col};flex-shrink:0;opacity:${isActive?1:.25}"></div>
         <div style="flex:1">
-          <div style="font-size:13px;font-weight:600;color:${isActive?'#374151':'#CBD5E1'}">${sv.lbl}${qtyLabel}</div>
-          <div style="display:flex;align-items:center;gap:3px;margin-top:2px">
-              <span style="font-size:10px;color:#94A3B8">€</span>
-              <input type="number" min="0" step="0.01" value="${sv.upr}"
-                onchange="xSetTeamPrice('${c.id}','${sv.key}',this.value)"
-                style="width:56px;border:1px solid ${sv.upr!==sv.globalUpr?sv.col:'#E2E8F0'};border-radius:6px;padding:2px 5px;font-size:11px;font-weight:700;text-align:right;font-family:monospace;outline:none;color:${sv.upr!==sv.globalUpr?sv.col:'#64748B'}">
-              ${sv.upr!==sv.globalUpr?'<button onclick="xResetTeamPrice(\''+c.id+'\',\''+sv.key+'\')" style="background:none;border:none;color:'+sv.col+';font-size:10px;cursor:pointer;padding:0;line-height:1">↺</button>':''}
-              <span style="font-size:10px;color:#94A3B8">${sv.qty>1?'x'+sv.qty+' ':''}x gg</span>
-            </div>
+          <div style="font-size:12px;font-weight:600;color:${isActive?'#374151':'#CBD5E1'}">${sv.lbl}</div>
+          <div style="display:flex;align-items:center;gap:3px;margin-top:1px">
+            <span style="font-size:10px;color:#94A3B8">€</span>
+            <input type="number" min="0" step="0.01" value="${sv.upr}" onchange="xSetTeamPrice('${c.id}','${sv.key}',this.value)"
+              style="width:52px;border:1px solid ${isPriceOvr?sv.col:'#E2E8F0'};border-radius:5px;padding:1px 4px;font-size:11px;font-weight:700;text-align:right;font-family:'Barlow Condensed',sans-serif;outline:none;color:${isPriceOvr?sv.col:'#64748B'}">
+            ${isPriceOvr?`<button onclick="xResetTeamPrice('${c.id}','${sv.key}')" style="background:none;border:none;color:${sv.col};font-size:10px;cursor:pointer;padding:0">↺</button>`:''}
+            <span style="font-size:10px;color:#94A3B8">x gg</span>
+          </div>
         </div>
-        <div style="display:flex;align-items:center;gap:2px;background:#F1F5F9;border-radius:8px;padding:3px 6px;border:1.5px solid ${isOvr?sv.col:'transparent'}">
-          <button onclick="xAdjSvcDays('${c.id}','${sv.key}',-1,${defDays})" style="background:none;border:none;color:#64748B;font-size:15px;font-weight:700;cursor:pointer;padding:0 3px;line-height:1">−</button>
-          <span style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;color:${isOvr?sv.col:'#374151'};min-width:20px;text-align:center">${sv.days}</span>
-          <button onclick="xAdjSvcDays('${c.id}','${sv.key}',1,${defDays})" style="background:none;border:none;color:#64748B;font-size:15px;font-weight:700;cursor:pointer;padding:0 3px;line-height:1">+</button>
+        <div style="display:flex;align-items:center;gap:2px;background:#F1F5F9;border-radius:8px;padding:2px 5px;border:1.5px solid ${isOvr?sv.col:'transparent'}">
+          <button onclick="xAdjSvcDays('${c.id}','${sv.key}',-1,${defDays})" style="background:none;border:none;color:#64748B;font-size:14px;font-weight:700;cursor:pointer;padding:0 2px;line-height:1">−</button>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;color:${isOvr?sv.col:'#374151'};min-width:18px;text-align:center">${sv.days}</span>
+          <button onclick="xAdjSvcDays('${c.id}','${sv.key}',1,${defDays})" style="background:none;border:none;color:#64748B;font-size:14px;font-weight:700;cursor:pointer;padding:0 2px;line-height:1">+</button>
           <span style="font-size:10px;color:#94A3B8">gg</span>
-          ${isOvr?`<button onclick="xResetSvcDays('${c.id}','${sv.key}')" style="background:none;border:none;color:${sv.col};font-size:10px;cursor:pointer;padding:0 0 0 3px;line-height:1" title="Default: ${defDays}gg">↺</button>`:''}
+          ${isOvr?`<button onclick="xResetSvcDays('${c.id}','${sv.key}')" style="background:none;border:none;color:${sv.col};font-size:10px;cursor:pointer;padding:0 0 0 2px">↺</button>`:''}
         </div>
-        <div style="font-size:14px;font-weight:800;color:${isActive?sv.col:'#E2E8F0'};min-width:68px;text-align:right">${isActive?'€ '+fmt(sv.cost):'--'}</div>
+        <div style="font-size:13px;font-weight:800;color:${isActive?sv.col:'#E2E8F0'};min-width:62px;text-align:right">${isActive?'€ '+fmt(sv.cost):'--'}</div>
+      </div>`;
+    });
+
+    // ── Righe barche (multi-row) ──────────────────────────────────────
+    html+=`<div style="padding:4px 0 2px;border-top:1px dashed #E2E8F0;margin-top:4px">`;
+    html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <span style="font-size:11px;font-weight:700;color:#94A3B8;letter-spacing:.5px">BARCHE</span>
+      <button onclick="xAddBoatRow('${c.id}')" style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:8px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer">+ Aggiungi riga</button>
+    </div>`;
+
+    const brows=S.serviceRows[c.id]||[];
+    if(!brows.length&&(ct.sCost>0||ct.dCost>0)){
+      // legacy: show old fleet-based rows read-only with migration button
+      if(ct.sCost>0)html+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px;color:#94A3B8"><span style="color:#0891B2;font-weight:600">1x</span> × ${w.s} · ${ct.dS}gg · €${fmt(getPrice(c.id,'s'))}/gg = <strong>€ ${fmt(ct.sCost)}</strong> <button onclick="xMigrateBoats('${c.id}')" style="margin-left:8px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer">Rendi modificabile</button></div>`;
+      if(ct.dCost>0)html+=`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px;color:#94A3B8"><span style="color:#7C3AED;font-weight:600">2x</span> × ${w.d} · ${ct.dD}gg · €${fmt(getPrice(c.id,'d'))}/gg = <strong>€ ${fmt(ct.dCost)}</strong></div>`;
+    }
+
+    brows.forEach(function(br,bi){
+      const btcol=br.type==='s'?'#0891B2':'#7C3AED';
+      const brlabel=br.type==='s'?'1x':'2x';
+      const brTotal=(br.upr||0)*(br.qty||0)*(br.days||0);
+      html+=`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #F8FAFC;flex-wrap:wrap">
+        <select onchange="xUpdateBoatRow('${c.id}',${bi},'type',this.value)" style="border:1px solid #E2E8F0;border-radius:6px;padding:3px 6px;font-size:12px;font-weight:700;color:${btcol};background:white;outline:none">
+          <option value="s" ${br.type==='s'?'selected':''}>1x</option>
+          <option value="d" ${br.type==='d'?'selected':''}>2x</option>
+        </select>
+        <span style="font-size:11px;color:#94A3B8">×</span>
+        <input type="number" min="0" step="1" value="${br.qty||0}" onchange="xUpdateBoatRow('${c.id}',${bi},'qty',this.value)"
+          style="width:42px;border:1px solid #E2E8F0;border-radius:6px;padding:3px 5px;font-size:13px;font-weight:700;text-align:center;font-family:'Barlow Condensed',sans-serif;outline:none" placeholder="qt">
+        <span style="font-size:11px;color:#94A3B8">barche ·</span>
+        <input type="number" min="0" step="1" value="${br.days||0}" onchange="xUpdateBoatRow('${c.id}',${bi},'days',this.value)"
+          style="width:38px;border:1px solid #E2E8F0;border-radius:6px;padding:3px 5px;font-size:13px;font-weight:700;text-align:center;font-family:'Barlow Condensed',sans-serif;outline:none" placeholder="gg">
+        <span style="font-size:11px;color:#94A3B8">gg · €</span>
+        <input type="number" min="0" step="0.01" value="${br.upr||0}" onchange="xUpdateBoatRow('${c.id}',${bi},'upr',this.value)"
+          style="width:52px;border:1px solid ${br.upr!==(br.type==='s'?getPrice(c.id,'s'):getPrice(c.id,'d'))?btcol:'#E2E8F0'};border-radius:6px;padding:3px 5px;font-size:13px;font-weight:700;text-align:right;font-family:'Barlow Condensed',sans-serif;outline:none;color:${btcol}" placeholder="€">
+        <span style="font-size:11px;color:#94A3B8">/gg</span>
+        <span style="font-size:13px;font-weight:800;color:${btcol};margin-left:auto">€ ${fmt(brTotal)}</span>
+        <button onclick="xDelBoatRow('${c.id}',${bi})" style="background:none;border:none;color:#CBD5E1;cursor:pointer;font-size:13px;padding:0;line-height:1">✕</button>
       </div>`;
     });
     html+=`</div>`;
+
+    if(ct.boatCost>0||ct.sCost>0||ct.dCost>0){
+      const btotal=ct.boatCost||ct.sCost+ct.dCost;
+      html+=`<div style="text-align:right;font-size:11px;color:#64748B;padding:4px 0 6px">Totale barche: <strong>€ ${fmt(btotal)}</strong></div>`;
+    }
+
+    html+=`</div>`; // end servizi
 
     // Footer totale + pagato
     html+=`<div style="padding:12px 16px;background:#F8FAFC;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-top:1px solid #E2E8F0">
       <div>
         <div style="font-size:10px;color:#94A3B8;margin-bottom:2px">TOTALE</div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:#0F172A">€ ${fmt(total)}</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:#0F172A">€ ${fmt(ct.total)}</div>
       </div>
       <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
         <div>
@@ -712,31 +763,56 @@ function hEC2(){
         ${!pagato?`<div><div style="font-size:10px;color:#94A3B8;margin-bottom:4px">MANCA</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:#DC2626">€ ${fmt(Math.max(0,due))}</div></div>`:`<div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;color:#059669">✓</div>`}
       </div>
     </div>
-    <div style="padding:10px 16px;border-top:1px solid #E2E8F0;background:white">`;
-    html+=`<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">`;
-    html+=`<span style="font-size:10px;color:#94A3B8;align-self:center;margin-right:4px">PREVENTIVO:</span>`;
-    html+=`<button onclick="genDocPDF('${c.id}','prev')" style="background:#0A2540;color:white;border:none;border-radius:10px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer">📄 PDF</button>`;
-    html+=`<button onclick="genDocXLSX('${c.id}','prev')" style="background:#1D4ED8;color:white;border:none;border-radius:10px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer">📊 Excel</button>`;
-    html+=`<span style="font-size:10px;color:#94A3B8;align-self:center;margin-left:8px;margin-right:4px">CONSUNTIVO:</span>`;
-    html+=`<button onclick="genDocPDF('${c.id}','cons')" style="background:#7C3AED;color:white;border:none;border-radius:10px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer">📄 PDF</button>`;
-    html+=`<button onclick="genDocXLSX('${c.id}','cons')" style="background:#059669;color:white;border:none;border-radius:10px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer">📊 Excel</button>`;
-    html+=`</div>`;
-    html+=`</div>
+
+    <div style="padding:10px 16px;border-top:1px solid #E2E8F0;display:flex;gap:6px;justify-content:flex-end;background:white;flex-wrap:wrap">
+      <span style="font-size:10px;color:#94A3B8;align-self:center;margin-right:4px">PREVENTIVO:</span>
+      <button onclick="genDocPDF('${c.id}','prev')" style="background:#0A2540;color:white;border:none;border-radius:10px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer">📄 PDF</button>
+      <button onclick="genDocXLSX('${c.id}','prev')" style="background:#1D4ED8;color:white;border:none;border-radius:10px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer">📊 Excel</button>
+      <span style="font-size:10px;color:#94A3B8;align-self:center;margin-left:6px;margin-right:4px">CONSUNTIVO:</span>
+      <button onclick="genDocPDF('${c.id}','cons')" style="background:#7C3AED;color:white;border:none;border-radius:10px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer">📄 PDF</button>
+      <button onclick="genDocXLSX('${c.id}','cons')" style="background:#059669;color:white;border:none;border-radius:10px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer">📊 Excel</button>
+    </div>
     </div>`;
   });
   return html;
 }
 
-async function xSetTeamPrice(cid,key,val){
-  const tp={...S.teamPrices};
-  if(!tp[cid])tp[cid]={};
-  tp[cid][key]=parseFloat(val)||0;
-  await sTP(tp);
+
+async function xAddBoatRow(cid){
+  const c=S.clubs.find(x=>x.id===cid);
+  const type='s';
+  const upr=getPrice(cid,'s');
+  const actual=daysActual(c);
+  const sr={...S.serviceRows};
+  if(!sr[cid])sr[cid]=[];
+  sr[cid]=[...sr[cid],{type,qty:1,days:actual,upr}];
+  await sSR(sr);
 }
-async function xResetTeamPrice(cid,key){
-  const tp={...S.teamPrices};
-  if(tp[cid]){delete tp[cid][key];if(!Object.keys(tp[cid]).length)delete tp[cid];}
-  await sTP(tp);
+async function xDelBoatRow(cid,idx){
+  const sr={...S.serviceRows};
+  if(!sr[cid])return;
+  sr[cid]=sr[cid].filter((_,i)=>i!==idx);
+  await sSR(sr);
+}
+async function xUpdateBoatRow(cid,idx,field,val){
+  const sr={...S.serviceRows};
+  if(!sr[cid])return;
+  const row={...sr[cid][idx]};
+  if(field==='qty'||field==='days')row[field]=Math.max(0,parseInt(val)||0);
+  else if(field==='upr')row[field]=parseFloat(val)||0;
+  else row[field]=val;
+  // auto-fill price from global when type changes
+  if(field==='type')row.upr=getPrice(cid,val);
+  sr[cid]=[...sr[cid]];sr[cid][idx]=row;
+  await sSR(sr);
+}
+async function xMigrateBoats(cid){
+  const c=S.clubs.find(x=>x.id===cid);if(!c)return;
+  const w=cBW(c);const actual=daysActual(c);
+  const sr={...S.serviceRows};sr[cid]=[];
+  if(w.s>0)sr[cid].push({type:'s',qty:w.s,days:getSvcDays(c,'s'),upr:getPrice(cid,'s')});
+  if(w.d>0)sr[cid].push({type:'d',qty:w.d,days:getSvcDays(c,'d'),upr:getPrice(cid,'d')});
+  await sSR(sr);
 }
 async function xAdjSvcDays(cid,key,delta,defaultDays){
   const sd={...S.serviceDays};
@@ -765,16 +841,28 @@ async function xSetPaid(id,val){
 // ── PREVENTIVO HELPERS ───────────────────────────────────────────────
 function prevData(cid){
   const c=S.clubs.find(x=>x.id===cid);if(!c)return null;
-  const ct=calcTotal(c);const p=S.prices;const w=cBW(c);
+  const ct=calcTotal(c);const w=cBW(c);
   const actual=daysActual(c);
   const rows=[];
   const ar=(code,desc,unit,upr,q1,q2,total,notes)=>rows.push({code,desc,unit,upr,q1,q2,total,notes});
-  ar('S1','Race course usage (daily setup)','team/day',p.line||0,ct.dLine,'--',ct.lineCost,'Non-exclusive; 4 buoy lanes; daily setup; coordination. Minimum guaranteed time: 2 consecutive hours per team per session');
-  if(w.s>0)ar('S2','Solo / 1x Boat use','boat/day',p.s||0,ct.dS,w.s,ct.sCost,'Not exclusive use; included oars');
-  if(w.d>0)ar('S3','Double / 2x Boat use','boat/day',p.d||0,ct.dD,w.d,ct.dCost,'Not exclusive use; included oars');
-  if(ct.dAssist>0)ar('S5','Motorboat assistance (mandatory)','day/shared',p.assist||0,ct.dAssist,'shared',ct.assistCost,'Cost shared among participating teams; includes 1 motorboat + 2 operators');
-  if(ct.dGym>0)ar('S6/7','Indoor training / Exclusive gym use','day or hour',p.gym||0,ct.dGym,'--',ct.gymCost,'6 ergs; covered tent / 1.5-hour sessions; booking required');
-  return{c,ct,rows,actual,p,w};
+  // S1 linea — usa prezzo del team
+  ar('S1','Race course usage (daily setup)','team/day',getPrice(cid,'line'),ct.dLine,'--',ct.lineCost,'Non-exclusive; 4 buoy lanes; daily setup; coordination. Minimum guaranteed time: 2 consecutive hours per team per session');
+  // Barche — righe flessibili
+  const brows=S.serviceRows[cid]||[];
+  if(brows.length){
+    brows.forEach(function(br,i){
+      const lbl=br.type==='s'?'Solo / 1x Boat use':'Double / 2x Boat use';
+      const code=br.type==='s'?'S2':'S3';
+      const tot=(br.upr||0)*(br.qty||0)*(br.days||0);
+      ar(code,lbl,'boat/day',br.upr,br.days,br.qty,tot,'Not exclusive use; included oars');
+    });
+  } else {
+    if(w.s>0)ar('S2','Solo / 1x Boat use','boat/day',getPrice(cid,'s'),ct.dS,w.s,ct.sCost,'Not exclusive use; included oars');
+    if(w.d>0)ar('S3','Double / 2x Boat use','boat/day',getPrice(cid,'d'),ct.dD,w.d,ct.dCost,'Not exclusive use; included oars');
+  }
+  if(ct.dAssist>0)ar('S5','Motorboat assistance (mandatory)','day/shared',getPrice(cid,'assist'),ct.dAssist,'shared',ct.assistCost,'Cost shared among participating teams; includes 1 motorboat + 2 operators');
+  if(ct.dGym>0)ar('S6/7','Indoor training / Exclusive gym use','day or hour',getPrice(cid,'gym'),ct.dGym,'--',ct.gymCost,'6 ergs; covered tent / 1.5-hour sessions; booking required');
+  return{c,ct,rows,actual,w};
 }
 
 function genDocPDF(cid,tipo){
@@ -816,7 +904,7 @@ function genDocPDF(cid,tipo){
       const cin=c.in||c.arrivalDate;const cout=c.out||c.departureDate;
       const aD=DAYS.find(x=>x.date===cin);const dD=DAYS.find(x=>x.date===cout);
       const nameOffset=c.fullName?6:0;
-      doc.text('Presence: '+(aD?aD.label:cin||'?')+' \u2192 '+(dD?dD.label:cout||'?')+'   |   '+actual+' days',16,y+10+nameOffset);
+      doc.text('Presence: '+(aD?aD.label:cin||'?')+' \u2192 '+(dD?dD.label:cout||'?'),16,y+10+nameOffset);
       doc.text('Document date: '+new Date().toLocaleDateString('en-GB'),16,y+16+nameOffset);
       y+=24+(c.fullName?6:0);
 
