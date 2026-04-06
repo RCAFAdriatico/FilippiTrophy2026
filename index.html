@@ -1088,146 +1088,103 @@ function genDocXLSX(cid,tipo){
 
 
 // ── RICEVUTA ──────────────────────────────────────────────────────────
-function numToWords(n){
-  // Simple Italian number to words for amounts
-  const ones=['','uno','due','tre','quattro','cinque','sei','sette','otto','nove',
-    'dieci','undici','dodici','tredici','quattordici','quindici','sedici','diciassette','diciotto','diciannove'];
-  const tens=['','','venti','trenta','quaranta','cinquanta','sessanta','settanta','ottanta','novanta'];
-  if(n===0)return'zero';
-  if(n<20)return ones[n];
-  if(n<100){const t=Math.floor(n/10);const o=n%10;return tens[t]+(o>0?(o===1||o===8?tens[t].slice(0,-1):'')+''+ones[o]:'');}
-  if(n<1000){const h=Math.floor(n/100);const r=n%100;return(h===1?'cento':ones[h]+'cento')+(r>0?numToWords(r):'');}
-  if(n<10000){const th=Math.floor(n/1000);const r=n%1000;return(th===1?'mille':ones[th]+'mila')+(r>0?numToWords(r):'');}
-  return String(n);
-}
-
-function amountInWords(tot){
-  const euros=Math.floor(tot);
-  const cents=Math.round((tot-euros)*100);
-  const w=numToWords(euros).toUpperCase();
-  return w+'/'+String(cents).padStart(2,'0');
-}
-
 function genRicevuta(cid){
   const c=S.clubs.find(x=>x.id===cid);if(!c)return;
   const ct=calcTotal(c);
-  const paid=S.payments[cid]||0;
   const total=ct.total;
-  if(total<=0){alert('Totale zero — imposta prima i servizi.');return;}
+  if(total<=0){alert('Totale zero \u2014 imposta prima i servizi e i giorni.');return;}
   set({pdfBusy:true});
   setTimeout(function(){
     try{
       const{jsPDF}=window.jspdf;
       const doc=new jsPDF('portrait','mm','a4');
       const W=210;const H=297;
+      const NAVY=[10,37,64];const GOLD=[185,148,65];
+      const LGRAY=[240,242,245];const GRAY=[120,120,120];
 
-      // ── Header ────────────────────────────────────────────────────
-      // CNF logo (sinistra)
-      doc.addImage(CNF_LOGO,'PNG',14,8,28,28);
-      // FIC logo (destra)
-      doc.addImage(FIC_LOGO,'JPEG',W-42,8,28,28);
+      // HEADER
+      doc.addImage(CNF_LOGO,'PNG',14,8,22,22);
+      doc.setFont('helvetica','bold');doc.setFontSize(16);doc.setTextColor(...NAVY);
+      doc.text('Club Nautico Fanese "Geremia Vivani"',W/2,14,{align:'center'});
+      doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...GRAY);
+      doc.text('Associazione Sportiva Dilettantistica',W/2,20,{align:'center'});
+      doc.text('via Simonetti \u00b7 61032 FANO (PS) \u00b7 tel. e fax 0721/807909',W/2,25,{align:'center'});
+      doc.text('e-mail: info@clubnauticofanese.it \u00b7 www.clubnauticofanese.it',W/2,30,{align:'center'});
+      doc.setDrawColor(...GOLD);doc.setLineWidth(1.2);doc.line(14,36,W-14,36);
 
-      // Testo header centrato
-      doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(0,0,0);
-      doc.text('CLUB NAUTICO FANESE "G. VIVANI" ASD',W/2,14,{align:'center'});
-      doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(80,80,80);
-      doc.text('Via della Darsena, 2 - 61032 Fano (PU)',W/2,19,{align:'center'});
-      doc.text('C.F. 80009190411',W/2,24,{align:'center'});
-      doc.text('IBAN: IT41F0849124300000220000594  -  BIC: CCRTIT2TCIV',W/2,29,{align:'center'});
+      // TITOLO
+      doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(...NAVY);
+      doc.text('RICEVUTA DI PAGAMENTO',W/2,46,{align:'center'});
 
-      // Linea separatrice
-      doc.setDrawColor(180,180,180);doc.setLineWidth(0.4);
-      doc.line(14,38,W-14,38);
-
-      // ── Numero e data ricevuta ─────────────────────────────────────
-      const ricN=S.ricNum||1;
-      const today=new Date().toLocaleDateString('it-IT');
-      doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(0,0,0);
-      doc.text('RICEVUTA n. '+String(ricN).padStart(3,'0'),14,48);
-      doc.setFont('helvetica','normal');doc.setFontSize(10);
-      doc.text('Del: '+today,W-14,48,{align:'right'});
-
-      // Linea
-      doc.setDrawColor(200,200,200);doc.setLineWidth(0.3);
-      doc.line(14,52,W-14,52);
-
-      // ── Soggetto pagatore ─────────────────────────────────────────
-      let y=60;
-      doc.setFillColor(245,245,245);doc.rect(14,y-4,W-28,32,'F');
-      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(100,100,100);
-      doc.text('ORGANIZZAZIONE / ORGANIZATION',16,y);
-      y+=6;
-      doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(0,0,0);
-      const dispName=c.fullName||c.name;
-      doc.text(dispName,16,y);
-      y+=6;
-      doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(60,60,60);
-      if(c.contact)doc.text('Att.: '+c.contact,16,y);
-      y+=5;
-      if(c.addr){doc.text(c.addr,16,y);y+=5;}
-      if(c.city||c.country){doc.text([c.city,c.country].filter(Boolean).join(', '),16,y);y+=5;}
-      if(c.email){doc.text('Email: '+c.email,16,y);y+=5;}
-      if(c.fiscal){doc.text('C.F./VAT: '+c.fiscal,16,y);y+=5;}
-
-      // ── Oggetto ───────────────────────────────────────────────────
-      y=100;
-      doc.setDrawColor(200,200,200);doc.line(14,y-4,W-14,y-4);
+      // NUMERO e DATA
       doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(0,0,0);
-      doc.text('Oggetto:',14,y);
-      doc.setFont('helvetica','normal');
-      doc.text('Contributo per Beach Sprint Training Camp \u2013 Filippi Cup 2026',40,y);
+      doc.text('Ricevuta n.  ___________',14,58);
+      doc.text('Del  ___________________',W-14,58,{align:'right'});
+      doc.setDrawColor(180,180,180);doc.setLineWidth(0.3);doc.line(14,62,W-14,62);
 
-      // ── Causale ───────────────────────────────────────────────────
-      y+=12;
+      // ORGANIZZAZIONE
+      doc.setFillColor(...LGRAY);doc.rect(14,64,W-28,18,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...GRAY);
+      doc.text('ORGANIZZAZIONE / ORGANISATION',16,69);
+      doc.setFont('helvetica','normal');doc.setFontSize(11);doc.setTextColor(0,0,0);
+      doc.text(c.fullName||c.name,16,78);
+
+      // REFERENTE + EMAIL
+      const colW=(W-28)/2;
+      doc.setFillColor(...LGRAY);doc.rect(14,84,colW-1,16,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...GRAY);
+      doc.text('REFERENTE / CONTACT',16,89);
+      doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(0,0,0);
+      doc.text(c.contact||'',16,97);
+      doc.setFillColor(...LGRAY);doc.rect(14+colW+1,84,colW-1,16,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...GRAY);
+      doc.text('EMAIL',16+colW+1,89);
+      doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(0,0,0);
+      doc.text(c.email||'',16+colW+1,97);
+      doc.setDrawColor(180,180,180);doc.setLineWidth(0.3);doc.line(14,102,W-14,102);
+
+      // OGGETTO
       const cin=c.in||c.arrivalDate;const cout=c.out||c.departureDate;
       const aD=DAYS.find(x=>x.date===cin);const dD=DAYS.find(x=>x.date===cout);
-      doc.setFont('helvetica','bold');doc.setFontSize(10);
-      doc.text('Causale:',14,y);
-      doc.setFont('helvetica','normal');
-      doc.text('Beach Sprint Training Camp, Fano '+( aD?aD.label:cin||'')+' \u2013 '+(dD?dD.label:cout||''),40,y);
+      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(0,0,0);
+      doc.text('Oggetto:',14,112);
+      doc.setFont('helvetica','normal');doc.setFontSize(11);
+      doc.text('Contributo per allenamento Filippi Trophy 2026 Fano',14,119);
+      doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...GRAY);
+      doc.text('Periodo: '+(aD?aD.label:cin||'')+' \u2013 '+(dD?dD.label:cout||''),14,125);
+      doc.setDrawColor(180,180,180);doc.setLineWidth(0.3);doc.line(14,130,W-14,130);
 
-      // ── Importo ───────────────────────────────────────────────────
-      y+=18;
-      doc.setFillColor(10,37,64);doc.rect(14,y-6,W-28,16,'F');
-      doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(11);
-      doc.text('IMPORTO CORRISPOSTO:',17,y+4);
-      doc.setFontSize(14);
-      doc.text('\u20ac '+fmt(total),W-16,y+4,{align:'right'});
+      // IMPORTO
+      doc.setFillColor(...NAVY);doc.rect(14,133,W-28,10,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(255,255,255);
+      doc.text('IMPORTO CORRISPOSTO / AMOUNT PAID',W/2,140,{align:'center'});
+      doc.setDrawColor(...GOLD);doc.setLineWidth(1.2);doc.rect(14,143,W-28,14,'S');
+      doc.setFont('helvetica','bold');doc.setFontSize(18);doc.setTextColor(...NAVY);
+      doc.text(fmt(total),W/2,153,{align:'center'});
 
-      y+=22;
-      doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');doc.setFontSize(9);
-      const words=amountInWords(total);
-      doc.text('In lettere: '+words,14,y);
+      // NOTE
+      doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...GRAY);
+      doc.text('Beach Sprint Training Camp \u2013 Filippi Cup 2026, Fano.',14,166);
 
-      // ── Note ──────────────────────────────────────────────────────
-      y+=14;
-      doc.setDrawColor(200,200,200);doc.line(14,y-4,W-14,y-4);
-      doc.setFont('helvetica','italic');doc.setFontSize(8);doc.setTextColor(120,120,120);
-      doc.text('Documento emesso a titolo di ricevuta per versamento volontario a favore di Club Nautico Fanese "G. Vivani" ASD,',14,y);
-      y+=5;
-      doc.text('ente non commerciale. Non soggetto a IVA ai sensi art. 4 DPR 633/72.',14,y);
+      // FIRMA
+      doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(100,100,100);
+      doc.text('Luogo e data / Place and date',14,192);
+      doc.text('Firma e timbro / Signature and stamp',W-14,192,{align:'right'});
+      doc.setDrawColor(180,180,180);doc.setLineWidth(0.5);
+      doc.line(14,202,80,202);doc.line(W-80,202,W-14,202);
 
-      // ── Firma ─────────────────────────────────────────────────────
-      y+=20;
-      doc.setTextColor(0,0,0);doc.setFont('helvetica','normal');doc.setFontSize(9);
-      doc.text('Fano, '+today,14,y);
-      doc.setDrawColor(180,180,180);doc.line(W-80,y+15,W-14,y+15);
-      doc.text('Firma e timbro',W-80,y+20);
+      // FOOTER GOLD LINE
+      doc.setDrawColor(...GOLD);doc.setLineWidth(3);doc.line(14,287,W-14,287);
 
-      // ── Footer ────────────────────────────────────────────────────
-      doc.setDrawColor(200,200,200);doc.line(14,H-20,W-14,H-20);
-      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(140,140,140);
-      doc.text('\u00a9 Rowing Club Adriatico \u2013 rowingclubadriatico.it',14,H-14);
-      doc.text('Filippi Cup 2026',W-14,H-14,{align:'right'});
-
-      // Increment receipt number
       S.ricNum=(S.ricNum||1)+1;
-
+      const ricN=S.ricNum-1;
       doc.save('ricevuta_'+String(ricN).padStart(3,'0')+'_'+c.name+'_filippi2026.pdf');
     }catch(e){alert('Errore ricevuta: '+e.message);console.error(e);}
     set({pdfBusy:false});
   },50);
 }
+
+
 render();load();
 </script>
 <div style="text-align:center;padding:16px;font-size:11px;color:#94A3B8;border-top:1px solid #E2E8F0;margin-top:20px">
