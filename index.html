@@ -292,7 +292,7 @@ function hAll(){return`${hHdr()}<div class="cnt">${S.tab==='grid'?hGrid():''}${S
 function hHdr(){
   const tabs=[{id:'grid',l:'Griglia'},{id:'list',l:'Lista'},{id:'club',l:'Per Club'},{id:'admin',l:S.admin?'Admin':'Admin'}];
   return`<div class="hdr"><div class="hi"><div class="ht"><div><a href="https://www.rowingclubadriatico.it" target="_blank" style="display:flex;align-items:center;gap:10px;text-decoration:none">
-<img id="adr-logo-img" src="" style="height:36px;object-fit:contain" alt="Rowing Club Adriatico">
+<img src="${ADR_LOGO}" style="height:36px;object-fit:contain" alt="Rowing Club Adriatico">
 <div><div class="brand">FILIPPI TROPHY 2026</div><div class="bsub">CAMP PRE-REGATA 11-15 APRILE</div></div></a></div>${S.admin?`<button class="aeb" onclick="set({admin:false,tab:'grid'})">Esci admin</button>`:''}</div><nav class="nav">${tabs.map(t=>`<button class="nb ${S.tab===t.id?'on':''}" onclick="xTab('${t.id}')">${t.l}</button>`).join('')}</nav></div></div>`;}
 
 function rCell(cell,adm,date,sid,line){
@@ -1229,7 +1229,6 @@ function genRicevuta(cid){
   },50);
 }
 render();load();
-document.addEventListener('DOMContentLoaded',function(){var el=document.getElementById('adr-logo-img');if(el)el.src=ADR_LOGO;});
 </script>
 <div style="text-align:center;padding:16px;font-size:11px;color:#94A3B8;border-top:1px solid #E2E8F0;margin-top:20px">
 © <a href="https://www.rowingclubadriatico.it" target="_blank" style="color:#94A3B8;text-decoration:none">Rowing Club Adriatico</a> — Filippi Trophy 2026
