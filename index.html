@@ -1242,37 +1242,34 @@ function hSL(){
   DAYS.forEach(function(day){
     const note=S.dayNotes[day.date]||'';
     const img=S.dayImages[day.date]||'';
-    html+=`<div class="card" style="margin-bottom:10px">
-      <div class="chd" style="display:flex;align-items:center;justify-content:space-between">
-        <span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700">${day.label}</span>
-        <div style="display:flex;gap:6px">
-          ${note?'<span style="background:#FFFBEB;color:#92400E;border:1px solid #FCD34D;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600">Nota attiva</span>':''}
-          ${img?'<span style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600">Immagine caricata</span>':''}
-        </div>
-      </div>
-      <div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px">
-        <div>
-          <div style="font-size:11px;font-weight:700;color:#64748B;margin-bottom:4px">NOTA / AVVISO METEO</div>
-          <div style="display:flex;gap:8px">
-            <input type="text" value="${note}" placeholder="es. Vento forte, sessioni spostate al pomeriggio" id="note-${day.date}"
-              style="flex:1;border:1px solid #E2E8F0;border-radius:8px;padding:7px 10px;font-size:13px;outline:none;color:#0F172A">
-            <button onclick="xSaveDayNote('${day.date}')" style="background:#1D4ED8;color:white;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">Salva</button>
-            ${note?`<button onclick="xDelDayNote('${day.date}')" style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer">X</button>`:''}
-          </div>
-        </div>
-        <div>
-          <div style="font-size:11px;font-weight:700;color:#64748B;margin-bottom:4px">IMMAGINE METEO</div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <label style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">
-              ${img?'Cambia immagine':'Carica immagine'}
-              <input type="file" accept="image/*" onchange="xUploadDayImg('${day.date}',this)" style="display:none">
-            </label>
-            ${img?`<button onclick="xDelDayImg('${day.date}')" style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer">Rimuovi</button>`:''}
-            ${img?`<img src="${img}" style="max-height:80px;max-width:180px;border-radius:8px;object-fit:contain;border:1px solid #E2E8F0">`:''}
-          </div>
-        </div>
-      </div>
-    </div>`;
+    const hasNote=note.length>0;
+    const hasImg=img.length>0;
+    let dayHtml='<div class="card" style="margin-bottom:10px">';
+    dayHtml+='<div class="chd" style="display:flex;align-items:center;justify-content:space-between">';
+    dayHtml+='<span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700">'+day.label+'</span>';
+    dayHtml+='<div style="display:flex;gap:6px">';
+    if(hasNote)dayHtml+='<span style="background:#FFFBEB;color:#92400E;border:1px solid #FCD34D;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600">Nota attiva</span>';
+    if(hasImg)dayHtml+='<span style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600">Immagine</span>';
+    dayHtml+='</div></div>';
+    dayHtml+='<div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px">';
+    // Nota
+    dayHtml+='<div><div style="font-size:11px;font-weight:700;color:#64748B;margin-bottom:4px">NOTA / AVVISO METEO</div>';
+    dayHtml+='<div style="display:flex;gap:8px">';
+    dayHtml+='<input type="text" value="'+note.replace(/"/g,'\'\'')+'" placeholder="es. Vento forte, sessioni spostate" id="note-'+day.date+'" style="flex:1;border:1px solid #E2E8F0;border-radius:8px;padding:7px 10px;font-size:13px;outline:none;color:#0F172A">';
+    dayHtml+='<button onclick="xSaveDayNote(\''+day.date+'\')" style="background:#1D4ED8;color:white;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">Salva</button>';
+    if(hasNote)dayHtml+='<button onclick="xDelDayNote(\''+day.date+'\')" style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer">X</button>';
+    dayHtml+='</div></div>';
+    // Immagine
+    dayHtml+='<div><div style="font-size:11px;font-weight:700;color:#64748B;margin-bottom:4px">IMMAGINE METEO</div>';
+    dayHtml+='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">';
+    dayHtml+='<label style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">';
+    dayHtml+=(hasImg?'Cambia immagine':'Carica immagine');
+    dayHtml+='<input type="file" accept="image/*" onchange="xUploadDayImg(\''+day.date+'\',this)" style="display:none"></label>';
+    if(hasImg)dayHtml+='<button onclick="xDelDayImg(\''+day.date+'\')" style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer">Rimuovi</button>';
+    if(hasImg)dayHtml+='<img src="'+img+'" style="max-height:80px;max-width:180px;border-radius:8px;object-fit:contain;border:1px solid #E2E8F0">';
+    dayHtml+='</div></div>';
+    dayHtml+='</div></div>';
+    html+=dayHtml;
   });
 return html;
 }
