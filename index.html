@@ -345,7 +345,7 @@ function hClub(){
   `<div class="es" style="padding:36px">Nessuno slot.</div>`}`:''}`;}
 
 function hAdmin(){
-  const secs=[{id:'stk',l:'Barche'},{id:'cl',l:'Team'},{id:'al',l:'Assegnazione'},{id:'ro',l:'Rotazione'},{id:'sl',l:'Slot'},{id:'ec',l:'Economia'},{id:'pd',l:'PDF'},{id:'fb',l:'Sync Firebase'}];
+  const secs=[{id:'stk',l:'🚤 Barche'},{id:'cl',l:'🏆 Team'},{id:'al',l:'📊 Assegna'},{id:'ro',l:'🔄 Rotazione'},{id:'sl',l:'🕐 Orari'},{id:'ec',l:'💰 Economia'},{id:'pd',l:'📄 PDF'},{id:'fb',l:'☁️ Sync'}];
   return`<div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap">${secs.map(s=>`<button class="asb ${S.sec===s.id?'on':''}" onclick="xSec('${s.id}')">${s.l}</button>`).join('')}</div>
   ${S.sec==='stk'?hStk():''}${S.sec==='cl'?hCl():''}${S.sec==='al'?hAl():''}${S.sec==='ro'?hRo():''}${S.sec==='pd'?hPd():''}${S.sec==='ec'?hEC2():''}${S.sec==='sl'?hSL():''}${S.sec==='fb'?hFB():''}`;}
 
