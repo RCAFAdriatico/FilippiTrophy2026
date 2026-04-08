@@ -1236,11 +1236,59 @@ function hSL(){
       <button onclick="xSaveSlots()" style="background:#1D4ED8;color:white;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;flex:1">Salva slot</button>
     </div>
   </div>`;
-  return html;
+  
+  // Note e immagini per giorno
+  html+=`<div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:#0F172A;margin:20px 0 10px">NOTE E METEO PER GIORNO</div>`;
+  DAYS.forEach(function(day){
+    const note=S.dayNotes[day.date]||'';
+    const img=S.dayImages[day.date]||'';
+    html+=`<div class="card" style="margin-bottom:10px">
+      <div class="chd" style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700">${day.label}</span>
+        <div style="display:flex;gap:6px">
+          ${note?'<span style="background:#FFFBEB;color:#92400E;border:1px solid #FCD34D;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600">Nota attiva</span>':''}
+          ${img?'<span style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600">Immagine caricata</span>':''}
+        </div>
+      </div>
+      <div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#64748B;margin-bottom:4px">NOTA / AVVISO METEO</div>
+          <div style="display:flex;gap:8px">
+            <input type="text" value="${note}" placeholder="es. Vento forte, sessioni spostate al pomeriggio" id="note-${day.date}"
+              style="flex:1;border:1px solid #E2E8F0;border-radius:8px;padding:7px 10px;font-size:13px;outline:none;color:#0F172A">
+            <button onclick="xSaveDayNote('${day.date}')" style="background:#1D4ED8;color:white;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">Salva</button>
+            ${note?`<button onclick="xDelDayNote('${day.date}')" style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer">X</button>`:''}
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#64748B;margin-bottom:4px">IMMAGINE METEO</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <label style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">
+              ${img?'Cambia immagine':'Carica immagine'}
+              <input type="file" accept="image/*" onchange="xUploadDayImg('${day.date}',this)" style="display:none">
+            </label>
+            ${img?`<button onclick="xDelDayImg('${day.date}')" style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer">Rimuovi</button>`:''}
+            ${img?`<img src="${img}" style="max-height:80px;max-width:180px;border-radius:8px;object-fit:contain;border:1px solid #E2E8F0">`:''}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  });
+return html;
 }
 
 
 
+
+async function xSaveDayNote(date){
+  const val=document.getElementById('note-'+date)?.value||'';
+  const dn={...S.dayNotes};
+  if(val.trim())dn[date]=val.trim();else delete dn[date];
+  await sDN(dn);
+}
+async function xDelDayNote(date){
+  const dn={...S.dayNotes};delete dn[date];await sDN(dn);
+}
 async function xUploadDayImg(date,input){
   const file=input.files[0];if(!file)return;
   const reader=new FileReader();
