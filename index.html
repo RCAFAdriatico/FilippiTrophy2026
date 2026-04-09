@@ -1410,7 +1410,16 @@ function xPDFDay(dayIdx){
           const ext=img.startsWith('data:image/png')?'PNG':'JPEG';
           doc.setFontSize(7);doc.setTextColor(148,163,184);doc.setFont('helvetica','italic');
           doc.text('Meteo:',10,y);y+=4;
-          doc.addImage(img,ext,10,y,W-20,45,'','FAST');y+=47;
+          // Calculate proportional dimensions
+          const tmpImg=new Image();
+          tmpImg.src=img;
+          const iw=tmpImg.naturalWidth||800;
+          const ih=tmpImg.naturalHeight||600;
+          const maxW=W-20;
+          const maxH=80;
+          const ratio=Math.min(maxW/iw,maxH/ih);
+          const dw=iw*ratio;const dh=ih*ratio;
+          doc.addImage(img,ext,10,y,dw,dh,'','FAST');y+=dh+4;
         }catch(e){console.warn('img',e);}
       }
       doc.setFontSize(7);doc.setTextColor(148,163,184);doc.setFont('helvetica','normal');
