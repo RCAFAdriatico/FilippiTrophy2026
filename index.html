@@ -216,6 +216,10 @@ async function load(){
     {ref:K+'-sd',parse:function(v){return JSON.parse(v);},          apply:function(d){S.serviceDays=d;}},
     {ref:K+'-tp',parse:function(v){return JSON.parse(v);},          apply:function(d){S.teamPrices=d;}},
     {ref:K+'-sr',parse:function(v){return JSON.parse(v);},          apply:function(d){S.serviceRows=d;}},
+    {ref:K+'-dn',parse:function(v){return JSON.parse(v);},          apply:function(d){S.dayNotes=d;}},
+    {ref:K+'-di',parse:function(v){return JSON.parse(v);},          apply:function(d){S.dayImages=d;}},
+    {ref:K+'-ds',parse:function(v){return JSON.parse(v);},          apply:function(d){S.daySlotLabels=d;}},
+    {ref:K+'-sl',parse:function(v){return JSON.parse(v);},          apply:function(d){S.slots=d;SLOTS=d;}},
   ];
   var loaded=0;
   KEYS.forEach(function(k){
