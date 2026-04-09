@@ -1416,6 +1416,46 @@ function xPDFDay(dayIdx){
     set({pdfBusy:false});
   },50);
 }
+
+async function xUploadDayImg(date,input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    const di={...S.dayImages};di[date]=e.target.result;
+    await sDI(di);
+  };
+  reader.readAsDataURL(file);
+}
+async function xDelDayImg(date){
+  const di={...S.dayImages};delete di[date];await sDI(di);
+}
+async function xSaveDayNote(date){
+  const el=document.getElementById('note-'+date);
+  const val=el?el.value:'';
+  const dn={...S.dayNotes};
+  if(val.trim())dn[date]=val.trim();else delete dn[date];
+  await sDN(dn);
+}
+async function xDelDayNote(date){
+  const dn={...S.dayNotes};delete dn[date];await sDN(dn);
+}
+async function xEditDayNote(date){
+  const cur=S.dayNotes[date]||'';
+  const val=prompt('Nota per questo giorno:',cur);
+  if(val===null)return;
+  const dn={...S.dayNotes};
+  if(val.trim())dn[date]=val.trim();else delete dn[date];
+  await sDN(dn);
+}
+async function xEditSlotLabel(date,slotId,defaultLabel){
+  const cur=(S.daySlotLabels[date]&&S.daySlotLabels[date][slotId])||'';
+  const val=prompt('Orario per '+slotId+' in questo giorno (lascia vuoto per default '+defaultLabel+'):',cur);
+  if(val===null)return;
+  const ds={...S.daySlotLabels};
+  if(!ds[date])ds[date]={};
+  if(val.trim())ds[date][slotId]=val.trim();else delete ds[date][slotId];
+  await sDS(ds);
+}
 render();load();
 </script>
 <div style="text-align:center;padding:16px;font-size:11px;color:#94A3B8;border-top:1px solid #E2E8F0;margin-top:20px">
