@@ -1214,183 +1214,57 @@ function genRicevuta(cid){
 
 function hSL(){
   let html='';
-  html+=`<div style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:#0F172A;margin-bottom:6px">SLOT ORARI</div>`;
-  html+=`<p style="font-size:13px;color:#64748B;margin-bottom:20px">Modifica etichette, orari e categoria degli slot. Le modifiche si applicano subito alla griglia.</p>`;
-  html+=`<div class="card" style="margin-bottom:16px"><div class="chd"><span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700">SLOT ATTIVI</span></div><div style="padding:16px;display:flex;flex-direction:column;gap:10px">`;
+  html+='<div style="font-family:&quot;Barlow Condensed&quot;,sans-serif;font-size:22px;font-weight:800;color:#0F172A;margin-bottom:6px">SLOT ORARI</div>';
+  html+='<p style="font-size:13px;color:#64748B;margin-bottom:20px">Modifica etichette, orari e categoria degli slot.</p>';
+  html+='<div class="card" style="margin-bottom:16px"><div class="chd"><span style="font-size:15px;font-weight:700">SLOT ATTIVI</span></div><div style="padding:16px;display:flex;flex-direction:column;gap:10px">';
   SLOTS.forEach(function(sl,i){
-    html+=`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:#F8FAFC;border:1.5px solid #E2E8F0">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:#1D4ED8;width:32px">${sl.id}</div>
-      <input type="text" value="${sl.label}" onchange="SLOTS[${i}].label=this.value"
-        style="flex:1;border:1px solid #E2E8F0;border-radius:8px;padding:6px 10px;font-size:14px;font-family:'Barlow Condensed',sans-serif;font-weight:700;outline:none;color:#0F172A" placeholder="es. 9:00-11:00">
-      <select onchange="SLOTS[${i}].ses=this.value" style="border:1px solid #E2E8F0;border-radius:8px;padding:6px 10px;font-size:13px;outline:none;background:white">
-        <option value="Mattina" ${sl.ses==='Mattina'?'selected':''}>Mattina</option>
-        <option value="Pom." ${sl.ses==='Pom.'?'selected':''}>Pomeriggio</option>
-        <option value="Sera" ${sl.ses==='Sera'?'selected':''}>Sera</option>
-      </select>
-      <button onclick="xDelSlot(${i})" style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer">Elimina</button>
-    </div>`;
+    html+='<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:#F8FAFC;border:1.5px solid #E2E8F0">';
+    html+='<div style="font-size:14px;font-weight:800;color:#1D4ED8;width:32px">'+sl.id+'</div>';
+    html+='<input type="text" value="'+sl.label+'" onchange="SLOTS['+i+'].label=this.value" style="flex:1;border:1px solid #E2E8F0;border-radius:8px;padding:6px 10px;font-size:14px;outline:none;color:#0F172A">';
+    html+='<select onchange="SLOTS['+i+'].ses=this.value" style="border:1px solid #E2E8F0;border-radius:8px;padding:6px 10px;font-size:13px;outline:none;background:white">';
+    html+='<option value="Mattina"'+(sl.ses==='Mattina'?' selected':'')+'>Mattina</option>';
+    html+='<option value="Pom."'+(sl.ses==='Pom.'?' selected':'')+'>Pomeriggio</option>';
+    html+='<option value="Sera"'+(sl.ses==='Sera'?' selected':'')+'>Sera</option>';
+    html+='</select>';
+    html+='<button onclick="xDelSlot('+i+')" style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer">Elimina</button>';
+    html+='</div>';
   });
-  html+=`</div>
-    <div style="padding:0 16px 16px;display:flex;gap:8px">
-      <button onclick="xAddSlot()" style="background:#059669;color:white;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;flex:1">+ Aggiungi slot</button>
-      <button onclick="xSaveSlots()" style="background:#1D4ED8;color:white;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;flex:1">Salva slot</button>
-    </div>
-  </div>`;
-  
-  // Note e immagini per giorno
-  html+=`<div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:#0F172A;margin:20px 0 10px">NOTE E METEO PER GIORNO</div>`;
-  DAYS.forEach(function(day){
-    const note=S.dayNotes[day.date]||'';
-    const img=S.dayImages[day.date]||'';
-    const hasNote=note.length>0;
-    const hasImg=img.length>0;
-    let dayHtml='<div class="card" style="margin-bottom:10px">';
-    dayHtml+='<div class="chd" style="display:flex;align-items:center;justify-content:space-between">';
-    dayHtml+='<span style="font-family:\'Barlow Condensed\',sans-serif;font-size:15px;font-weight:700">'+day.label+'</span>';
-    dayHtml+='<div style="display:flex;gap:6px">';
-    if(hasNote)dayHtml+='<span style="background:#FFFBEB;color:#92400E;border:1px solid #FCD34D;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600">Nota attiva</span>';
-    if(hasImg)dayHtml+='<span style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600">Immagine</span>';
-    dayHtml+='</div></div>';
-    dayHtml+='<div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px">';
-    // Nota
-    dayHtml+='<div><div style="font-size:11px;font-weight:700;color:#64748B;margin-bottom:4px">NOTA / AVVISO METEO</div>';
-    dayHtml+='<div style="display:flex;gap:8px">';
-    dayHtml+='<input type="text" value="'+note.replace(/"/g,'\'\'')+'" placeholder="es. Vento forte, sessioni spostate" id="note-'+day.date+'" style="flex:1;border:1px solid #E2E8F0;border-radius:8px;padding:7px 10px;font-size:13px;outline:none;color:#0F172A">';
-    dayHtml+='<button onclick="xSaveDayNote(\''+day.date+'\')" style="background:#1D4ED8;color:white;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">Salva</button>';
-    if(hasNote)dayHtml+='<button onclick="xDelDayNote(\''+day.date+'\')" style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer">X</button>';
-    dayHtml+='</div></div>';
-    // Immagine
-    dayHtml+='<div><div style="font-size:11px;font-weight:700;color:#64748B;margin-bottom:4px">IMMAGINE METEO</div>';
-    dayHtml+='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">';
-    dayHtml+='<label style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">';
-    dayHtml+=(hasImg?'Cambia immagine':'Carica immagine');
-    dayHtml+='<input type="file" accept="image/*" onchange="xUploadDayImg(\''+day.date+'\',this)" style="display:none"></label>';
-    if(hasImg)dayHtml+='<button onclick="xDelDayImg(\''+day.date+'\')" style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer">Rimuovi</button>';
-    if(hasImg)dayHtml+='<img src="'+img+'" style="max-height:80px;max-width:180px;border-radius:8px;object-fit:contain;border:1px solid #E2E8F0">';
-    dayHtml+='</div></div>';
-    dayHtml+='</div></div>';
-    html+=dayHtml;
+  html+='</div><div style="padding:0 16px 16px;display:flex;gap:8px">';
+  html+='<button onclick="xAddSlot()" style="background:#059669;color:white;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;flex:1">+ Aggiungi slot</button>';
+  html+='<button onclick="xSaveSlots()" style="background:#1D4ED8;color:white;border:none;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;flex:1">Salva slot</button>';
+  html+='</div></div>';
+  html+='<div style="font-size:18px;font-weight:800;color:#0F172A;margin:20px 0 10px">NOTE E METEO PER GIORNO</div>';
+  DAYS.forEach(function(day,di){
+    var note=S.dayNotes[day.date]||'';
+    var img=S.dayImages[day.date]||'';
+    html+='<div class="card" style="margin-bottom:10px">';
+    html+='<div class="chd" style="display:flex;align-items:center;justify-content:space-between">';
+    html+='<span style="font-size:15px;font-weight:700">'+day.label+'</span>';
+    html+='<div style="display:flex;gap:6px">';
+    if(note)html+='<span style="background:#FFFBEB;color:#92400E;border:1px solid #FCD34D;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600">Nota attiva</span>';
+    if(img)html+='<span style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600">Immagine</span>';
+    html+='</div></div>';
+    html+='<div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px">';
+    // Use di (day index) in onclick to avoid string escaping issues
+    html+='<div><div style="font-size:11px;font-weight:700;color:#64748B;margin-bottom:4px">NOTA / AVVISO METEO</div>';
+    html+='<div style="display:flex;gap:8px">';
+    html+='<input type="text" value="'+note.replace(/"/g,'&quot;')+'" placeholder="es. Vento forte, sessioni spostate" id="note-'+day.date+'" style="flex:1;border:1px solid #E2E8F0;border-radius:8px;padding:7px 10px;font-size:13px;outline:none;color:#0F172A">';
+    html+='<button onclick="xSaveDayNote(DAYS['+di+'].date)" style="background:#1D4ED8;color:white;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">Salva</button>';
+    if(note)html+='<button onclick="xDelDayNote(DAYS['+di+'].date)" style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer">X</button>';
+    html+='</div></div>';
+    html+='<div><div style="font-size:11px;font-weight:700;color:#64748B;margin-bottom:4px">IMMAGINE METEO</div>';
+    html+='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">';
+    html+='<label style="background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer">';
+    html+=(img?'Cambia immagine':'Carica immagine');
+    html+='<input type="file" accept="image/*" onchange="xUploadDayImg(DAYS['+di+'].date,this)" style="display:none"></label>';
+    if(img)html+='<button onclick="xDelDayImg(DAYS['+di+'].date)" style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;border-radius:8px;padding:7px 10px;font-size:12px;cursor:pointer">Rimuovi</button>';
+    if(img)html+='<img src="'+img+'" style="max-height:80px;max-width:180px;border-radius:8px;object-fit:contain;border:1px solid #E2E8F0">';
+    html+='</div></div>';
+    html+='</div></div>';
   });
-return html;
+  return html;
 }
 
-
-
-
-async function xSaveDayNote(date){
-  const val=document.getElementById('note-'+date)?.value||'';
-  const dn={...S.dayNotes};
-  if(val.trim())dn[date]=val.trim();else delete dn[date];
-  await sDN(dn);
-}
-async function xDelDayNote(date){
-  const dn={...S.dayNotes};delete dn[date];await sDN(dn);
-}
-async function xUploadDayImg(date,input){
-  const file=input.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=async function(e){
-    const di={...S.dayImages};di[date]=e.target.result;
-    await sDI(di);
-  };
-  reader.readAsDataURL(file);
-}
-async function xDelDayImg(date){
-  const di={...S.dayImages};delete di[date];
-  await sDI(di);
-}
-function xPDFDay(dayIdx){
-  if(S.pdfBusy)return;
-  set({pdfBusy:true});
-  setTimeout(()=>{
-    try{
-      const day=DAYS[dayIdx];
-      const{jsPDF}=window.jspdf;
-      const doc=new jsPDF('landscape','mm','a4');
-      const W=297;const nv=[10,37,64];
-      // Header
-      doc.setFillColor(...nv);doc.rect(0,0,W,16,'F');
-      doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(12);
-      doc.text('FILIPPI TROPHY 2026 — PROGRAMMA GIORNALIERO',W/2,7,{align:'center'});
-      doc.setFont('helvetica','normal');doc.setFontSize(9);
-      doc.text(day.label.toUpperCase(),W/2,13,{align:'center'});
-      // Day note
-      const note=S.dayNotes[day.date]||'';
-      let y=20;
-      if(note){
-        doc.setFillColor(255,251,235);doc.rect(10,y,W-20,8,'F');
-        doc.setTextColor(146,64,14);doc.setFont('helvetica','bold');doc.setFontSize(9);
-        doc.text('⚠ '+note,12,y+5.5);
-        y+=10;
-      }
-      // Team presenti
-      const pres=S.clubs.filter(c=>isAct(c,day.date)).map(c=>c.name).join(', ')||'--';
-      doc.setTextColor(100,100,100);doc.setFont('helvetica','normal');doc.setFontSize(8);
-      doc.text('Team presenti: '+pres,10,y+4);
-      y+=10;
-      // Meteo image — full width below team list
-      const img=S.dayImages[day.date];
-      if(img){
-        try{
-          const ext=img.startsWith('data:image/png')?'PNG':'JPEG';
-          // Calculate image aspect ratio to fit nicely
-          const maxW=W-20; const maxH=50;
-          doc.addImage(img,ext,10,y,maxW,maxH,'','FAST');
-          doc.setTextColor(150,150,150);doc.setFont('helvetica','italic');doc.setFontSize(7);
-          doc.text('Previsioni meteo',10,y+maxH+3);
-          y+=maxH+7;
-        }catch(e){console.warn('img error',e);}
-      }
-      const body=SLOTS.map(sl=>{
-        const lbl=(S.daySlotLabels[day.date]&&S.daySlotLabels[day.date][sl.id])||sl.label;
-        const tot=slotTot(S.clubs,S.sched,day.date,sl.id);
-        return[sl.ses+'\n'+lbl,...LINES.map(l=>cTxt(S.sched?.[day.date]?.[sl.id]?.[l]||{})),
-          tot.s>0?String(tot.s):'',tot.d>0?String(tot.d):''];
-      });
-      doc.autoTable({
-        head:[['Slot','L1','L2','L3','L4','1x/'+S.stk.s,'2x/'+S.stk.d]],
-        body,startY:y,margin:{left:10,right:10},
-        headStyles:{fillColor:nv,textColor:255,fontStyle:'bold',fontSize:8},
-        styles:{fontSize:9,cellPadding:{top:4,bottom:4,left:4,right:4},valign:'middle'},
-        columnStyles:{0:{fontStyle:'bold',cellWidth:28,fillColor:[248,250,252]},5:{cellWidth:14,halign:'center'},6:{cellWidth:14,halign:'center'}},
-        alternateRowStyles:{fillColor:[252,253,255]}
-      });
-      // Immagine meteo sotto la tabella
-      const img=S.dayImages[day.date];
-      if(img){
-        try{
-          const ext=img.startsWith('data:image/png')?'PNG':'JPEG';
-          const iy=doc.lastAutoTable.finalY+4;
-          doc.setFontSize(7);doc.setTextColor(148,163,184);doc.setFont('helvetica','italic');
-          doc.text('Immagine meteo:',10,iy);
-          doc.addImage(img,ext,10,iy+3,W-20,45,'','FAST');
-        }catch(e){console.warn('img',e);}
-      }
-      // Footer
-      doc.setFontSize(7);doc.setTextColor(148,163,184);doc.setFont('helvetica','normal');
-      doc.text('Generato '+new Date().toLocaleDateString('it-IT'),W/2,203,{align:'center'});
-      doc.save('programma_'+day.date+'_filippi2026.pdf');
-    }catch(e){alert('Errore PDF: '+e.message);console.error(e);}
-    set({pdfBusy:false});
-  },50);
-}
-async function xEditDayNote(date){
-  const cur=S.dayNotes[date]||'';
-  const val=prompt('Nota per questo giorno (lascia vuoto per eliminare):',cur);
-  if(val===null)return;
-  const dn={...S.dayNotes};
-  if(val.trim())dn[date]=val.trim();else delete dn[date];
-  await sDN(dn);
-}
-async function xEditSlotLabel(date,slotId,defaultLabel){
-  const cur=(S.daySlotLabels[date]&&S.daySlotLabels[date][slotId])||'';
-  const val=prompt('Orario per questo slot in questo giorno (lascia vuoto per usare quello standard '+defaultLabel+'):',cur);
-  if(val===null)return;
-  const ds={...S.daySlotLabels};
-  if(!ds[date])ds[date]={};
-  if(val.trim())ds[date][slotId]=val.trim();else delete ds[date][slotId];
-  await sDS(ds);
-}
 async function xSaveSlots(){
   await sSL([...SLOTS]);
   alert('Slot salvati!');
