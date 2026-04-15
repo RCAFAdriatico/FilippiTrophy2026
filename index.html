@@ -1469,6 +1469,18 @@ async function xEditSlotLabel(date,slotId,defaultLabel){
   if(val.trim())ds[date][slotId]=val.trim();else delete ds[date][slotId];
   await sDS(ds);
 }
+
+async function xSetTeamPrice(cid,key,val){
+  const tp={...S.teamPrices};
+  if(!tp[cid])tp[cid]={};
+  tp[cid][key]=parseFloat(val)||0;
+  await sTP(tp);
+}
+async function xResetTeamPrice(cid,key){
+  const tp={...S.teamPrices};
+  if(tp[cid]){delete tp[cid][key];if(!Object.keys(tp[cid]).length)delete tp[cid];}
+  await sTP(tp);
+}
 render();load();
 </script>
 <div style="text-align:center;padding:16px;font-size:11px;color:#94A3B8;border-top:1px solid #E2E8F0;margin-top:20px">
