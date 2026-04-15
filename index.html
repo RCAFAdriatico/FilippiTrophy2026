@@ -214,7 +214,7 @@ async function load(){
     {ref:K+'-p', parse:function(v){return JSON.parse(v);},          apply:function(d){S.prices=d;}},
     {ref:K+'-m', parse:function(v){return JSON.parse(v);},          apply:function(d){S.payments=d;}},
     {ref:K+'-sd',parse:function(v){return JSON.parse(v);},          apply:function(d){S.serviceDays=d;}},
-    {ref:K+'-tp',parse:function(v){return JSON.parse(v);},          apply:function(d){S.teamPrices=d;}},
+    {ref:K+'-tp',parse:function(v){return JSON.parse(v);},          apply:function(d){if(!window._tpSavedAt||Date.now()-window._tpSavedAt>2000)S.teamPrices=d;}},
     {ref:K+'-sr',parse:function(v){return JSON.parse(v);},          apply:function(d){S.serviceRows=d;}},
     {ref:K+'-dn',parse:function(v){return JSON.parse(v);},          apply:function(d){S.dayNotes=d;}},
     {ref:K+'-di',parse:function(v){return JSON.parse(v);},          apply:function(d){S.dayImages=d;}},
@@ -242,7 +242,7 @@ const sG=async g=>{S.groups=g;render();await ST.set(K+'-g',JSON.stringify(g));};
 const sP=async p=>{S.prices=p;render();await ST.set(K+'-p',JSON.stringify(p));};
 const sM=async m=>{S.payments=m;render();await ST.set(K+'-m',JSON.stringify(m));};
 const sSD=async s=>{S.serviceDays=s;render();await ST.set(K+'-sd',JSON.stringify(s));};
-const sTP=async t=>{S.teamPrices=t;render();await ST.set(K+'-tp',JSON.stringify(t));};
+const sTP=async t=>{S.teamPrices=t;render();await ST.set(K+'-tp',JSON.stringify(t));window._tpSavedAt=Date.now();};
 const sSL=async s=>{S.slots=s;SLOTS=s;render();await ST.set(K+'-sl',JSON.stringify(s));};
 const sDN=async d=>{S.dayNotes=d;render();await ST.set(K+'-dn',JSON.stringify(d));};
 const sDS=async d=>{S.daySlotLabels=d;render();await ST.set(K+'-ds',JSON.stringify(d));};
@@ -1471,10 +1471,12 @@ async function xEditSlotLabel(date,slotId,defaultLabel){
 }
 
 async function xSetTeamPrice(cid,key,val){
-  const tp={...S.teamPrices};
-  if(!tp[cid])tp[cid]={};
-  tp[cid][key]=parseFloat(val)||0;
-  await sTP(tp);
+  // Update locally first so calcTotal sees new value immediately
+  if(!S.teamPrices[cid])S.teamPrices[cid]={};
+  S.teamPrices[cid][key]=parseFloat(val)||0;
+  render(); // re-render with new price
+  // Then persist to Firebase
+  await ST.set(K+'-tp',JSON.stringify(S.teamPrices));
 }
 async function xResetTeamPrice(cid,key){
   const tp={...S.teamPrices};
